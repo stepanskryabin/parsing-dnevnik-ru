@@ -5,6 +5,8 @@ name = "pypi"
 
 [packages]
 selenium = "*"
+beautifulsoup4 = "*"
+lxml = "*"
 
 [dev-packages]
 flake8 = "*"
