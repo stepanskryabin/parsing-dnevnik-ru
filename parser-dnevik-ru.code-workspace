@@ -1,0 +1,15 @@
+{
+    "folders": [
+        {
+            "path": "Z:\\GoogleDisk\\work\\parser-dnevik-ru"
+        }
+    ],
+    "settings": {
+        "python.pythonPath": "C:\\Users\\Galina1\\.virtualenvs\\parser-dnevik-ru-r0CFnqE4\\Scripts\\python.exe",
+        "python.terminal.activateEnvInCurrentTerminal": true,
+        "python.terminal.activateEnvironment": true,
+        "python.venvPath": "C:\\Users\\Galina1\\.virtualenvs\\parser-dnevik-ru-r0CFnqE4",
+        "python.pipenvPath": "C:\\Program Files\\Python39\\Scripts\\",
+        "python.envFile": "${workspaceFolder}\\.env"
+    }
+}

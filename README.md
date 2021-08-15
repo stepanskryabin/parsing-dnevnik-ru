@@ -1,1 +1,2 @@
-# parsing-dnevnik-ru
+# parser-dnevik-ru
+утилита парсинга расписаний с портала dnevnik.ru
