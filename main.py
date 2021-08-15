@@ -30,6 +30,8 @@ def get_info(html):
     tr = tbody.find_all('tr')
     table_head = []
     text = []
+    teacher = []
+    room = []
 
     # Отбираем заголовки таблицы с названием дня
     for item in tr:
@@ -41,20 +43,38 @@ def get_info(html):
             else:
                 table_head.append(head.text)
 
-    # Отбираем ячейки таблицы с именем урока
+    # Отбираем ячейки таблицы с номером урока
+    for item in tr:
+        td = item.find_all('td')
+        for item in td:
+            lesson_number = item.find('strong')
+            if lesson_number is None:
+                pass
+            else:
+                lesson_number = lesson_number.text
+                print("lesson_number: ", lesson_number)
+            # Отбираем название уроков
+            lesson = item.find('div', class_='dL')
+            if lesson is None:
+                pass
+            else:
+                lesson = lesson.find('a').get('title')
+                print('Lesson: ', lesson)
+
+    # Отбираем ячейки с именем учителя
     for item in tr:
         td = item.find_all('td')
         for item in td:
             div = item.find_all('div')
             for item in div:
-                a = item.find('a')
-                if a is None:
-                    a = "Отсутствует"
-                else:
-                    a = a.text
-                text.append(a)
+                p1 = item.find('p')
+                teacher.append(p1)
+                p2 = item.findNext('p')
+                room.append(p2)
     print(table_head)
     print(text)
+    #print(teacher)
+    #print(room)
     return  #data
 
 
