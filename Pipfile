@@ -7,6 +7,9 @@ name = "pypi"
 selenium = "*"
 beautifulsoup4 = "*"
 lxml = "*"
+flask = "*"
+sqlobject = "*"
+loguru = "*"
 
 [dev-packages]
 flake8 = "*"
