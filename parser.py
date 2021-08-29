@@ -3,9 +3,9 @@ from datetime import timedelta, date
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
-# import sqlobject as orm
+import sqlobject as orm
 
-# from .models import db
+from models import db
 
 # ************** Logging beginning *******************
 from loguru import logger
@@ -24,62 +24,114 @@ OTHER = config['OTHER']
 LOGGING = config['LOGGING']
 DNEVNIK_RU = config['DNEVNIK_RU']
 TRIMESTER = config['TRIMESTER']
+DB = config['DATABASE']
 # ************** END **********************************
 
 add_logging(LOGGING.getint('level'))
 
 
-def get_info(html):
-    soup = BeautifulSoup(html, 'lxml')
-    table = soup.find('table', id='editor')
-    tbody = table.find('tbody')
-    tr = tbody.find_all('tr')
-    table_head = []
-    text = []
-    teacher = []
-    room = []
+try:
+    connect = orm.connectionForURI(DB.get('uri'))
+    logger.debug(f"Читаем адрес БДЖ {DB.get('uri')}")
+except Exception as ERROR:
+    logger.exception(f'Ошибка подключения к БД: {ERROR}')
+else:
+    orm.sqlhub.processConnection = connect
+    logger.debug('Подключение к БД выполнено успешно')
 
-    # Отбираем заголовки таблицы с названием дня
-    for item in tr:
-        th = item.find_all('th')
-        for item in th:
-            head = item.find('a')
-            if head is None:
+
+def get_info(html):
+    """Функция парсит полученный HTML и записывает информацию в БД.
+    Записывается: дата, дата в текстовом формате, номер урока, название урока,
+    учитель, номер кабинета, время урока
+
+    Args:
+        html ([type]): raw HTML
+
+    Returns:
+        [type]:
+    """
+    def convert_to_isodate(string: str) -> str:
+        """Функция конвертирует найденный ID в дату
+        в ISO-формате
+
+        Args:
+            string (str): строка содержащая дату, например 'd20201101'
+
+        Returns:
+            [str]: возвращает дату в формате ISO, например '2020-11-01'
+        """
+        var: str = string.lstrip('d')
+        result = date(int(var[0:4]), int(var[4:6]), int(var[6:8]))
+        return result.isoformat()
+
+    soup = BeautifulSoup(html, 'lxml')
+    content = soup.find('div', id='content')
+    schedules_classes = content.find('a', class_='blue')
+    logger.debug("Найдено имя учебного класса")
+    classes_group_id: str = schedules_classes.get('href')
+    logger.debug(f"Получена ссылка в которой есть ID класса: {classes_group_id}")
+    dnevnik_ru_id = classes_group_id.rsplit(sep='=')[1]
+    logger.debug(f"Получен ID класса: {dnevnik_ru_id}")
+    new_classes = db.Classes(name=schedules_classes.text,
+                             dnevnik_ru_id=dnevnik_ru_id)
+    logger.debug("Найдены таблицы с расписанием")
+    tbody = content.find('tbody')
+    all_th = tbody.find_all('th')
+    logger.debug("Найдены все заголовки таблицы с расписанием")
+    all_tr = tbody.find_all('tr')
+    logger.debug("Найдены все строки таблицы с расписанием")
+    for item in all_th:
+        schedules_date_id = item.get('id')
+        if schedules_date_id is None:
+            continue
+        else:
+            print(schedules_date_id)
+            logger.debug(f"Найдены все ID: {schedules_date_id}")
+            schedules_date = convert_to_isodate(schedules_date_id)
+            text_date = item.find('a', alt="")
+            logger.debug("Найдены заголовки таблицы с датой и названием дня")
+            if text_date is None:
+                logger.debug("Отсутствует название дня")
                 continue
             else:
-                table_head.append(head.text)
-
-    # Отбираем ячейки таблицы с номером урока
-    for item in tr:
-        td = item.find_all('td')
-        for item in td:
-            lesson_number = item.find('strong')
-            if lesson_number is None:
-                pass
-            else:
-                lesson_number = lesson_number.text
-                print("lesson_number: ", lesson_number)
-            # Отбираем название уроков
-            lesson = item.find('div', class_='dL')
-            if lesson is None:
-                pass
-            else:
-                lesson = lesson.find('a').get('title')
-                print('Lesson: ', lesson)
-
-    # Отбираем ячейки с именем учителя
-    for item in tr:
-        td = item.find_all('td')
-        for item in td:
-            div = item.find_all('div')
-            for item in div:
-                p1 = item.find('p')
-                teacher.append(p1)
-                p2 = item.findNext('p')
-                room.append(p2)
-    print(table_head)
-    print(text)
-    return
+                text_date = text_date.text
+                for item in all_tr:
+                    lesson_number = item.find('td', class_='wDS')
+                    logger.debug("Найдены ячейки таблицы с номером урока")
+                    if lesson_number is None:
+                        logger.debug("Номер урока отсутствует")
+                        continue
+                    else:
+                        lesson_number = int(lesson_number.strong.text)
+                        lesson_info = item.find('td', id=f'{schedules_date_id}_{lesson_number}')
+                        p = lesson_info.p
+                        logger.debug("Найдены все ячейки столбца с ID урока")
+                        lesson_name = lesson_info.find('a', class_='aL')
+                        if lesson_name is None:
+                            lesson_name = 'Урок отсутствует'
+                        else:
+                            lesson_name = lesson_name.get('title')
+                        if lesson_info.p is None:
+                            continue
+                        else:
+                            _ = p.get('title')
+                            lesson_teacher = p.find_next('p')
+                            lesson_time = lesson_teacher.find_next('p')
+                            lesson_room = lesson_time.find_next('p')
+                        logger.debug("Собираем информацию об уроке и пишем в БД")
+                        try:
+                            db.Timetable(date=schedules_date,
+                                         dnevnik_ru_date=text_date,
+                                         lesson_number=lesson_number,
+                                         lesson_name=lesson_name,
+                                         lesson_room=int(lesson_room.text),
+                                         lesson_teacher=lesson_teacher.text,
+                                         lesson_time=lesson_time.text,
+                                         classes=new_classes)
+                        except Exception as ERROR:
+                            logger.exception(f"Запис в БД неудачна: {ERROR}")
+        return print('КОНЕЦ')
 
 
 def get_classes(html) -> tuple[tuple]:
@@ -96,7 +148,7 @@ def get_classes(html) -> tuple[tuple]:
     ul = soup.find('ul', class_='classes')
     data = []
     if ul is None:
-        logger.debug("Информация о классах не найдена")
+        logger.error("Информация о классах не найдена")
     else:
         first_li = ul.find_all('li')
         for item in first_li:
@@ -105,7 +157,7 @@ def get_classes(html) -> tuple[tuple]:
                 url: str = item.find('a').get('href')
                 if url is None:
                     class_name = None
-                    logger.debug('Ссылка на учебный класс не найдена')
+                    logger.error('Ссылка на учебный класс не найдена')
                 else:
                     class_name: str = item.a.text
                     element: tuple = (class_name, url)
@@ -142,11 +194,11 @@ def get_schedules(tuple_of_classes: tuple[tuple],
         second_trimester = date.fromisoformat(TRIMESTER.get('second'))
         third_trimester = date.fromisoformat(TRIMESTER.get('third'))
         if request_date <= first_trimester:
-            result = number_of_trimester[1]
+            result = number_of_trimester[0]
         elif first_trimester < request_date <= second_trimester:
-            result = number_of_trimester[2]
+            result = number_of_trimester[1]
         elif second_trimester < request_date <= third_trimester:
-            result = number_of_trimester[3]
+            result = number_of_trimester[2]
         else:
             logger.error(' '.join("Ошибка в определении триместра.",
                                   "Использован номер первого триместра"))
@@ -166,6 +218,9 @@ def get_schedules(tuple_of_classes: tuple[tuple],
         # элементов: первый элемент название учебного класса,
         #            второй элемент ссылка на его расписание
         link_to_class = item[1]
+        # FIXME после тестов убрать
+        link_to_class = 'https://schools.dnevnik.ru/schedules/view.aspx?school=10509&group=1712390980428985547'
+        logger.debug(f"ИСПОЛЬЗУЕТСЯ ОДИН КЛАСС: {link_to_class}")
         for d in date_filtred:
             schedules = ''.join([f'{link_to_class}',
                                  f'&period={get_trimester(d)}',
@@ -179,12 +234,12 @@ def get_schedules(tuple_of_classes: tuple[tuple],
 
 def main(url: str):
     # Настраиваем и запускаем браузер
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
-    browser = webdriver.Chrome(executable_path=OTHER.get('browser_driver'),
-                               options=options)
+    # options = webdriver.ChromeOptions()
+    # options.add_argument('--headless')
+    browser = webdriver.Chrome(executable_path=OTHER.get('browser_driver'))
     # Таймаут чтобы браузер загрузился
     browser.implicitly_wait(10)
+    logger.debug('Браузер загрузился')
     browser.get(url)
     browser.find_element_by_name('login').clear()
     browser.find_element_by_name('login').send_keys(USER.get('login'))
@@ -193,26 +248,29 @@ def main(url: str):
     browser.find_element_by_xpath("//input[@type='submit'][@data-test-id='login-button']").click()
     # Таймаут чтобы произошел переход в личный кабинет
     browser.implicitly_wait(10)
+    logger.debug("Переход в ЛК")
     # Переходим на страницу школьных расписаний с актуальным годом
     browser.get(''.join([f'{DNEVNIK_RU.get("schedules_url")}',
                          f'?school={PARAMETERS.get("school")}',
                          f'&tab=groups&year={PARAMETERS.get("year")}']))
     browser.implicitly_wait(10)
+    logger.debug("Переход на страницу с расписаниями")
     # Парсим ссылки на все классы
     tuple_of_classes: tuple[tuple] = get_classes(browser.page_source)
-    logger.debug(f"Все классы: {tuple_of_classes}")
+    logger.debug(f"Все классы спарсены: {tuple_of_classes}")
     # Подготавливаем кортеж из всех ссылок на расписание
     schedules = get_schedules(tuple_of_classes=tuple_of_classes,
                               start_year=PARAMETERS.getint('year'),
                               start_month=PARAMETERS.getint('month'),
                               start_day=PARAMETERS.getint('day'),
                               deep_day=PARAMETERS.getint('deep_day'))
+    logger.debug("Кортеж из ссылок на расписание сформирован")
     # Обходим кортеж ссылок и получаем html для обработки
     for schedule in schedules:
         browser.get(schedule)
         browser.implicitly_wait(10)
         raw_html = browser.page_source
-        logger.debug("Получен raw html")
+        logger.debug("Получен raw html для обработки")
         get_info(raw_html)
     return
 
