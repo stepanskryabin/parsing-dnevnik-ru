@@ -12,7 +12,7 @@ class Classes(orm.SQLObject):
         timetable ([MultipleJoin]): привязка к записи содержащей расписание
     """
     name = orm.StringCol(notNone=True)
-    dnevnik_ru_id = orm.String()
+    dnevnik_ru_id = orm.StringCol()
     # Связь с другими таблицами
     timetable = orm.MultipleJoin('Timetable')
 
@@ -30,11 +30,12 @@ class Timetable(orm.SQLObject):
         lesson_teacher ([str]): ФИО учителя, который проводит урок
         classes ([ForeignKey]): привязка к названию учебного класса
     """
-    date = orm.DateCol()
+    date = orm.StringCol()
     dnevnik_ru_date = orm.StringCol()
     lesson_number = orm.IntCol()
     lesson_name = orm.StringCol()
     lesson_room = orm.IntCol()
     lesson_teacher = orm.StringCol()
+    lesson_time = orm.StringCol()
     # Связь с другими таблицами
     classes = orm.ForeignKey('Classes')
