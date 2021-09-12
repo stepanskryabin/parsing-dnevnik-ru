@@ -1,14 +1,51 @@
 {% extends "base.html" %}
 {% block menu %}
-<nav aria-label="breadcrumb">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="/home"><h2>Главная</h2></a></li>
-    <li class="breadcrumb-item active" aria-current="page"><h2>Расписание {{ classname }}</h2></li>
-  </ol>
-</nav>
+<h4>Расписание уроков для {{ classname }} класса, с {{ week[page_id-1].get("start") }} по {{ week[page_id-1].get("end") }}</h4>
 {% endblock %}
 {% block content %}
+<div class="container">
+<div class="table-responsive">
+<table class="table table-sm table-striped">
+  <thead>
+    <tr>
+      {% for column in columns %}
+        <th class="fs-6 lh-sm" scope="col">{{ column }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      {% for row in rows %}
+        <th class="fs-6 lh-sm" scope="row">{{ row }}</th>
+        {% for lesson in lessons %}
+          <td class="fs-6 lh-sm">{{ lesson }}</td>
+        {% endfor %}
+        </tr>
+        <tr>
+      {% endfor %}
+  </tbody>
+</table>
+</div>
+</div>
 {% endblock %}
 {% block footer %}
-    <p> Footer </p>
+<nav aria-label="...">
+  <ul class="pagination">
+    {%if page_id == 1 %}
+      <li class="page-item active" aria-current="page">
+        <span class="page-link">Текущая неделя</span>
+      </li>
+      <li class="page-item">
+        <a class="page-link" href="/schedules/{{classname}}-2">Следующая неделя</a>
+      </li>
+    {% elif page_id == 2 %}
+      <li class="page-item">
+      <a class="page-link" href="/schedules/{{classname}}-1">Текущая неделя</a>
+      </li>
+      <li class="page-item active" aria-current="page">
+        <span class="page-link">Следующая неделя</span>
+      </li>
+    {% endif %}
+  </ul>
+</nav>
 {% endblock %}

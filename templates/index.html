@@ -1,26 +1,23 @@
 {% extends "base.html" %}
 {% block menu %}
-<nav aria-label="breadcrumb">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item active" aria-current="page"><h2>Главная</h2></li>
-  </ol>
-</nav>
+  <h4> {{ years }} учебный год</h4>
 {% endblock %}
 {% block content %}
-{% for _class in classes %}
-  {% if loop.index == 9 %}
-    <br>
-    <br>
-  {% elif loop.index == 17 %}
-    <br>
-    <br>
-  {% elif loop.index == 25 %}
-    <br>
-    <br>
-  {% endif %}
-  <a href="/schedules/{{_class}}"><button type="{{_class}}" class="btn btn-outline-secondary btn-lg">{{_class}}</button></a>
-{% endfor %}
+  {% for _class in classes %}
+    {% if loop.index == 9 %}
+      <br>
+      <br>
+    {% elif loop.index == 17 %}
+      <br>
+      <br>
+    {% elif loop.index == 25 %}
+      <br>
+      <br>
+    {% endif %}
+    <a href="/schedules/{{_class}}-1"><button type="{{_class}}-1" class="btn btn-outline-secondary btn-lg">{{_class}}</button></a>
+  {% endfor %}
 {% endblock %}
 {% block footer %}
-    <p> Footer </p>
+  <br>
+  <p class="small"> &#127279; Stepan Skiabin </p>
 {% endblock %}
