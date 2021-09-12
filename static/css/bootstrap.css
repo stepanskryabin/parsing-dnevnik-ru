@@ -3415,9 +3415,9 @@ textarea.form-control-lg {
 }
 
 .btn-lg, .btn-group-lg > .btn {
-  padding: 2.5rem 5rem;
+  padding: 1.5rem 2.0rem;
   font-size: 2rem;
-  border-radius: 0.3rem;
+  border-radius: 0.5rem;
 }
 
 .btn-sm, .btn-group-sm > .btn {
