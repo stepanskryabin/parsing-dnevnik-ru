@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href={{ url_for("static", filename="css/bootstrap.css") }} rel="stylesheet">
+    <script src={{ url_for("static", filename="js/bootstrap.js") }}></script>
+    <title>Расписание</title>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row align-items-start">
+            <div class="col-1">
+            </div>
+            <div class="col-10">
+                {% block menu %}
+                {% endblock %}
+            </div>
+            <div class="col-1">
+            </div>
+        </div>
+        <div class="row align-items-center">
+            <div class="col-1">
+            </div>
+            <div class="col-10">
+                {% block content %}
+                {% endblock %}
+            </div>
+            <div class="col-1">
+            </div>
+        </div>
+        <div class="row align-items-end">
+            <div class="col-1">
+            </div>
+            <div class="col-10">
+                {% block footer %}
+                {% endblock %}
+            </div>
+            <div class="col-1">
+            </div>
+        </div>
+    </div>
+    </div>
+</body>
+</html>
+
