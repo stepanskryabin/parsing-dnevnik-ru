@@ -1,7 +1,7 @@
 import configparser
 
 from flask import Flask
-from flask import render_template, url_for
+from flask import render_template
 import sqlobject as orm
 
 # ************** Logging beginning *******************
@@ -12,10 +12,13 @@ import logging
 logging.disable()
 # ************** Logging end *************************
 
+# ****************************************************
 config = configparser.ConfigParser()
 config.read("config.ini")
 database = config['DATABASE']
 LOG = config['LOGGING']
+PARAMETERS = config["PARAMETERS"]
+# ****************************************************
 
 # loguru logger on
 add_logging(LOG.getint("level"))
@@ -47,9 +50,26 @@ def home():
                "9А", "9Б", "9В",
                "10",
                "11")
-    return render_template("index.html", classes=classes)
+    years = f"{PARAMETERS.getint('year')} / {PARAMETERS.getint('year') + 1}"
+    return render_template("index.html",
+                           classes=classes,
+                           years=years)
 
 
-@app.route('/schedules/<name>')
-def schedules(name):
-    return render_template("schedules.html", classname=name)
+@app.route('/schedules/<name>-<int:page_id>')
+def schedules(name, page_id):
+    col_name = ("Урок", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС")
+    row_name = (str(x) for x in range(1, 13))
+    lesson_name = ("Русский язык", "Математика", "ОБЖ", "История",
+                   "Английский язык", "Физкультура", "Черчение")
+    week = ({"start": "01 сентября",
+             "end": "08 сентября"},
+             {"start": "09 сентября",
+             "end": "16 сентября"})
+    return render_template("schedules.html",
+                           classname=name,
+                           columns=col_name,
+                           rows=row_name,
+                           lessons=lesson_name,
+                           page_id=page_id,
+                           week=week)
