@@ -137,3 +137,4 @@ config.ini
 chromedriver.exe
 /log
 /database.db
+ngrok.exe
