@@ -31,7 +31,6 @@ class Timetable(orm.SQLObject):
         classes ([ForeignKey]): привязка к названию учебного класса
     """
     date = orm.StringCol()
-    dnevnik_ru_date = orm.StringCol()
     lesson_number = orm.IntCol()
     lesson_name = orm.StringCol()
     lesson_room = orm.IntCol()
