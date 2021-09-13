@@ -68,11 +68,11 @@ def get_lessons(html) -> tuple[tuple]:
 
     soup = BeautifulSoup(html, 'lxml')
     content = soup.find('div', id='content')
-    schedules_classes = content.find('a', class_='blue')
+    schedules_classes: str = content.find('a', class_='blue')
     logger.debug("Найдено имя учебного класса")
     classes_group_id: str = schedules_classes.get('href')
     logger.debug(f"Получена ссылка с ID класса: {classes_group_id}")
-    dnevnik_ru_id = classes_group_id.rsplit(sep='=')[1]
+    dnevnik_ru_id: int = int(classes_group_id.rsplit(sep='=')[1])
     logger.debug(f"Получен ID класса: {dnevnik_ru_id}")
     tbody = content.find('tbody')
     all_th = tbody.find_all('th')
@@ -83,7 +83,7 @@ def get_lessons(html) -> tuple[tuple]:
     # Первый цикл: находим все наименования дней недели
     schedule_dates = []
     for item in all_th:
-        schedules_date_id = item.get('id')
+        schedules_date_id: str = item.get('id')
         if schedules_date_id is None:
             logger.debug("Отсутствует ID")
             continue
@@ -95,13 +95,13 @@ def get_lessons(html) -> tuple[tuple]:
     # Второй цикл: находим номера уроков
     lesson_numbers = []
     for item in all_tr:
-        lesson_number = item.find('td', class_='wDS')
+        l_number: str = item.find('td', class_='wDS')
         logger.debug("Найдены ячейки таблицы с номером урока")
-        if lesson_number is None:
+        if l_number is None:
             logger.debug("Номер урока отсутствует")
             continue
         else:
-            lesson_number = int(lesson_number.strong.text)
+            lesson_number: int = int(l_number.strong.text)
             logger.debug("Номер урока найден")
             lesson_numbers.append(lesson_number)
     lesson_numbers = tuple(lesson_numbers)
@@ -115,8 +115,11 @@ def get_lessons(html) -> tuple[tuple]:
             for lesson_number in lesson_numbers:
                 lesson_info = item.find('td',
                                         id=f'{schedules_date_id}_{lesson_number}')
-                logger.debug("Найдена ячейка расписания")
-                lesson_name = lesson_info.find('a', class_='aL')
+                if lesson_info is None:
+                    continue
+                else:
+                    logger.debug("Найдена ячейка расписания")
+                    lesson_name: str = lesson_info.find('a', class_='aL')
                 if lesson_name is None:
                     lesson_name = 'Урок отсутствует'
                 else:
@@ -125,20 +128,22 @@ def get_lessons(html) -> tuple[tuple]:
                     continue
                 else:
                     first_p = lesson_info.div.p
-                    lesson_teacher = first_p.get('title')
+                    _ = first_p.get('title')
                     second_p = first_p.find_next('p')
-                    lesson_time = second_p.text
+                    lesson_teacher: str = second_p.text
                     third_p = second_p.find_next('p')
-                    lesson_room = third_p.text
+                    lesson_time: str = third_p.text
+                    fourth_p = third_p.find_next('p')
+                    lesson_room: int = int(fourth_p.text)
                     logger.debug("Собираем информацию об уроке")
-                    result = (schedules_classes,
+                    result = (schedules_classes.encode(encoding='utf-8'),
                               dnevnik_ru_id,
                               convert_to_isodate(schedules_date_id),
                               lesson_number,
-                              lesson_name,
-                              lesson_teacher,
+                              lesson_name.encode(encoding='utf-8'),
+                              lesson_teacher.encode(encoding='utf-8'),
                               lesson_time,
-                              int(lesson_room))
+                              lesson_room)
                     schedules.append(result)
     schedules = tuple(schedules)
     return schedules
