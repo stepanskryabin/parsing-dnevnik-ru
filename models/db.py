@@ -12,7 +12,7 @@ class Classes(orm.SQLObject):
         timetable ([MultipleJoin]): привязка к записи содержащей расписание
     """
     name = orm.StringCol(notNone=True)
-    dnevnik_ru_id = orm.StringCol()
+    dnevnik_ru_id = orm.IntCol()
     # Связь с другими таблицами
     timetable = orm.MultipleJoin('Timetable')
 
