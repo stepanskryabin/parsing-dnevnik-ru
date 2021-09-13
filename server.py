@@ -64,7 +64,7 @@ def schedules(name, page_id):
                    "Английский язык", "Физкультура", "Черчение")
     week = ({"start": "01 сентября",
              "end": "08 сентября"},
-             {"start": "09 сентября",
+            {"start": "09 сентября",
              "end": "16 сентября"})
     return render_template("schedules.html",
                            classname=name,
