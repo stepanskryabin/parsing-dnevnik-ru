@@ -138,10 +138,36 @@ def get_lessons(html) -> tuple[tuple]:
                               lesson_name,
                               lesson_teacher,
                               lesson_time,
-                              lesson_room)
+                              int(lesson_room))
                     schedules.append(result)
     schedules = tuple(schedules)
     return schedules
+
+
+def write_db(lesson: tuple[tuple]) -> None:
+    dbquery = db.Classes.selectBy(name=lesson[0],
+                                  dnevnik_ru_id=lesson[1])
+    if dbquery.count == 0:
+        new_class = db.Classes(name=lesson[0],
+                               dnevnik_ru_id=lesson[1])
+    elif dbquery.count == 1:
+        new_class = dbquery
+    else:
+        logger.debug("Записей больше одной")
+        pass
+    try:
+        db.Timetable(date=lesson[2],
+                     lesson_number=lesson[3],
+                     lesson_name=lesson[4],
+                     lesson_room=lesson[7],
+                     lesson_teacher=lesson[5],
+                     lesson_time=lesson[6],
+                     classes=new_class)
+        logger.info('Информация об уроке записана в БД')
+        return
+    except Exception as ERROR:
+        logger.exception(f"Запис в БД неудачна: {ERROR}")
+        return
 
 
 def get_classes(html) -> tuple[tuple]:
