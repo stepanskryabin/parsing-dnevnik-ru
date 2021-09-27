@@ -102,7 +102,6 @@ def get_lessons(html) -> tuple[tuple]:
             continue
         else:
             lesson_number: int = int(l_number.strong.text)
-            logger.debug("Номер урока найден")
             lesson_numbers.append(lesson_number)
     lesson_numbers = tuple(lesson_numbers)
     #
@@ -118,7 +117,6 @@ def get_lessons(html) -> tuple[tuple]:
                 if lesson_info is None:
                     continue
                 else:
-                    logger.debug("Найдена ячейка расписания")
                     lesson_name: str = lesson_info.find('a', class_='aL')
                 if lesson_name is None:
                     lesson_name = 'Урок отсутствует'
@@ -135,7 +133,6 @@ def get_lessons(html) -> tuple[tuple]:
                     lesson_time: str = third_p.text
                     fourth_p = third_p.find_next('p')
                     lesson_room: str = fourth_p.text
-                    logger.debug("Собираем информацию об уроке")
                     result = (schedules_classes.text,
                               dnevnik_ru_id,
                               convert_to_isodate(schedules_date_id),
@@ -171,10 +168,10 @@ def write_db(lesson: tuple[tuple]) -> None:
                      lesson_teacher=lesson[5],
                      lesson_time=lesson[6],
                      classes=new_class)
-        logger.info('Информация об уроке записана в БД')
+        logger.debug('Информация об уроке записана в БД')
         return
     except Exception as ERROR:
-        logger.exception(f"Запис в БД неудачна: {ERROR}")
+        logger.exception(f"Запись в БД неудачна: {ERROR}")
         return
 
 
@@ -187,7 +184,8 @@ def get_classes(html) -> tuple[tuple]:
 
     Returns:
         tuple[tuple]: кортеж со вложенным кортежем первым элементом которого
-        является учебный класс, вторым элементом ссылка, а третьим элементов ID класса.
+        является учебный класс, вторым элементом ссылка, а третьим элементов
+        ID класса.
     """
     soup = BeautifulSoup(html, 'lxml')
     ul = soup.find('ul', class_='classes')
@@ -243,7 +241,6 @@ def get_schedules(tuple_of_classes: tuple[tuple],
         for d in tuple_of_date:
             if d.isocalendar()[1] > new_week.isocalendar()[1]:
                 new_week = d
-                logger.debug(f"Номер недели: {new_week}")
                 result.append(d)
             else:
                 logger.debug("Номер недели меньше начального")
@@ -282,9 +279,6 @@ def get_schedules(tuple_of_classes: tuple[tuple],
         # элементов: первый элемент название учебного класса,
         #            второй элемент ссылка на его расписание
         link_to_class = item[1]
-        # FIXME после тестов убрать
-        #link_to_class = 'https://schools.dnevnik.ru/schedules/view.aspx?school=10509&group=1849711203825070779'
-        #logger.debug(f"ИСПОЛЬЗУЕТСЯ ОДИН КЛАСС: {link_to_class}")
         for d in date_filtred:
             schedules = ''.join([f'{link_to_class}',
                                  f'&period={get_trimester(d)}',
@@ -304,7 +298,6 @@ def main(url: str):
     # Настраиваем и запускаем браузер
     # options = webdriver.ChromeOptions()
     # options.add_argument('--headless')
-    logger.debug(f'{executable}')
     browser = webdriver.Chrome(executable_path=executable)
     # Выставляем таймаут, чтобы браузер ждал 10 сек
     # после выполнения каждого действия
@@ -336,10 +329,10 @@ def main(url: str):
     for schedule in schedules:
         browser.get(schedule)
         raw_html = browser.page_source
-        logger.debug("Получен raw html для обработки")
         lessons = get_lessons(raw_html)
         for lesson in lessons:
             write_db(lesson)
+    browser.quit()
     return
 
 
