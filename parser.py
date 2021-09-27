@@ -134,14 +134,14 @@ def get_lessons(html) -> tuple[tuple]:
                     third_p = second_p.find_next('p')
                     lesson_time: str = third_p.text
                     fourth_p = third_p.find_next('p')
-                    lesson_room: int = int(fourth_p.text)
+                    lesson_room: str = fourth_p.text
                     logger.debug("Собираем информацию об уроке")
-                    result = (schedules_classes.encode(encoding='utf-8'),
+                    result = (schedules_classes.text,
                               dnevnik_ru_id,
                               convert_to_isodate(schedules_date_id),
                               lesson_number,
-                              lesson_name.encode(encoding='utf-8'),
-                              lesson_teacher.encode(encoding='utf-8'),
+                              lesson_name,
+                              lesson_teacher,
                               lesson_time,
                               lesson_room)
                     schedules.append(result)
@@ -150,16 +150,19 @@ def get_lessons(html) -> tuple[tuple]:
 
 
 def write_db(lesson: tuple[tuple]) -> None:
+    logger.debug(f'{lesson}')
+    # FIXME нет ссылки на таблицу Classes
     dbquery = db.Classes.selectBy(name=lesson[0],
                                   dnevnik_ru_id=lesson[1])
-    if dbquery.count == 0:
+    if dbquery.count() == 0:
         new_class = db.Classes(name=lesson[0],
                                dnevnik_ru_id=lesson[1])
-    elif dbquery.count == 1:
-        new_class = dbquery
+    elif dbquery.count() == 1:
+        new_class = dbquery.getOne().id
     else:
         logger.debug("Записей больше одной")
         pass
+
     try:
         db.Timetable(date=lesson[2],
                      lesson_number=lesson[3],
@@ -217,7 +220,7 @@ def get_schedules(tuple_of_classes: tuple[tuple],
                   start_year: int,
                   start_month: int,
                   start_day: int,
-                  deep_day: int) -> tuple:
+                  deep_day: int) -> set:
     """Функция генерирует кортеж с ссылками на расписание
     уроков от заданной даты и на заданную глубину
 
@@ -280,8 +283,8 @@ def get_schedules(tuple_of_classes: tuple[tuple],
         #            второй элемент ссылка на его расписание
         link_to_class = item[1]
         # FIXME после тестов убрать
-        link_to_class = 'https://schools.dnevnik.ru/schedules/view.aspx?school=10509&group=1849711203825070779'
-        logger.debug(f"ИСПОЛЬЗУЕТСЯ ОДИН КЛАСС: {link_to_class}")
+        #link_to_class = 'https://schools.dnevnik.ru/schedules/view.aspx?school=10509&group=1849711203825070779'
+        #logger.debug(f"ИСПОЛЬЗУЕТСЯ ОДИН КЛАСС: {link_to_class}")
         for d in date_filtred:
             schedules = ''.join([f'{link_to_class}',
                                  f'&period={get_trimester(d)}',
@@ -290,17 +293,18 @@ def get_schedules(tuple_of_classes: tuple[tuple],
                                  f'&day={d.day}'])
             result.append(schedules)
     logger.debug(f"Список ссылок на расписание: {result}")
-    return tuple(result)
+    return set(result)
 
 
 def main(url: str):
     if OS_NAME == 'nt':
         executable = "".join((".\\", OTHER.get('browser_driver'), ".exe"))
     elif OS_NAME == 'posix':
-        executable = "".join((".\\", OTHER.get('browser_driver')))
+        executable = "".join(("./", OTHER.get('browser_driver')))
     # Настраиваем и запускаем браузер
     # options = webdriver.ChromeOptions()
     # options.add_argument('--headless')
+    logger.debug(f'{executable}')
     browser = webdriver.Chrome(executable_path=executable)
     # Выставляем таймаут, чтобы браузер ждал 10 сек
     # после выполнения каждого действия

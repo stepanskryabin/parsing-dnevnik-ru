@@ -33,7 +33,7 @@ class Timetable(orm.SQLObject):
     date = orm.StringCol()
     lesson_number = orm.IntCol()
     lesson_name = orm.StringCol()
-    lesson_room = orm.IntCol()
+    lesson_room = orm.StringCol()
     lesson_teacher = orm.StringCol()
     lesson_time = orm.StringCol()
     # Связь с другими таблицами
