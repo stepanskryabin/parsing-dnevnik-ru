@@ -1,5 +1,5 @@
 import configparser
-from datetime import timedelta, date
+from datetime import date
 from os import name as OS_NAME
 
 from bs4 import BeautifulSoup
@@ -7,6 +7,7 @@ from selenium import webdriver
 import sqlobject as orm
 
 from models import db
+from controller import convtime
 
 # ************** Logging beginning *******************
 from loguru import logger
@@ -106,7 +107,7 @@ def get_lessons(html) -> tuple[tuple]:
     lesson_numbers = tuple(lesson_numbers)
     #
     # Третий цикл: находим название урока, учителя, время и кабинет
-    # и кладём это в едтиный кортеж с уже включенными: датой урока и
+    # и кладём это в единый кортеж с уже включенными: датой урока и
     # номером урока
     schedules = []
     for item in all_tr:
@@ -227,24 +228,13 @@ def get_schedules(tuple_of_classes: tuple[tuple],
         класса, ссылку на его расписание и ID. Используется только
         второй элемент кортежа.
         start_year (int): год начала загрузки расписания
-        start_month (int): месяц  начала загрузки расписания
-        start_day (int): день  начала загрузки расписания
+        start_month (int): месяц начала загрузки расписания
+        start_day (int): день начала загрузки расписания
         deep_day (int): глубина (дни) на которую загружается расписание
 
     Returns:
         tuple: кортеж с ссылками на расписание для всех классов
     """
-    def filtred_by_week(tuple_of_date: tuple) -> tuple:
-        result = []
-        new_week = tuple_of_date[0]
-        result.append(new_week)
-        for d in tuple_of_date:
-            if d.isocalendar()[1] > new_week.isocalendar()[1]:
-                new_week = d
-                result.append(d)
-            else:
-                logger.debug("Номер недели меньше начального")
-        return tuple(result)
 
     def get_trimester(request_date) -> int:
         logger.debug(f"Дата запроса: {request_date}")
@@ -266,14 +256,12 @@ def get_schedules(tuple_of_classes: tuple[tuple],
             result = number_of_trimester[1]
         return result
 
-    start_date = date(start_year, start_month, start_day)
-    list_of_day = [timedelta(day) for day in range(deep_day + 1)]
-    list_of_date = [start_date + day for day in list_of_day]
-    date_filtred = filtred_by_week(list_of_date)
-    logger.debug(f"Список дат: {list_of_date}")
-    logger.debug(f"Список классов: {tuple_of_classes}")
-    result = []
+    date_filtred = convtime.filtred_by_week(start_year,
+                                            start_month,
+                                            start_day,
+                                            deep_day)
 
+    result = []
     for item in tuple_of_classes:
         # в кортеже list_of_classes находится вложенный кортеж из двух
         # элементов: первый элемент название учебного класса,
