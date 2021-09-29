@@ -17,8 +17,19 @@
     <tr>
       {% for row in rows %}
         <th class="fs-6 lh-sm" scope="row">{{ row }}</th>
-        {% for lesson in lessons %}
-          <td class="fs-6 lh-sm">{{ lesson }}</td>
+        {% for timetable in timetables %}
+          {% for item in timetable %}
+            {% if item.lesson_number == row %}
+              <td class="fs-6 lh-sm">{{ item.lesson_room }}
+                                    <br>
+                                    {{ item.lesson_name }}
+                                    <br>
+                                    {{ item.lesson_teacher }}
+                                    <br>
+                                    {{ item.lesson_time }}
+                                    </td>
+            {% endif %}
+          {% endfor %}
         {% endfor %}
         </tr>
         <tr>

@@ -1,8 +1,13 @@
 import configparser
+from datetime import date, timedelta
 
 from flask import Flask
 from flask import render_template
 import sqlobject as orm
+from sqlobject import AND
+
+from controller import convtime
+from models import db
 
 # ************** Logging beginning *******************
 from loguru import logger
@@ -58,18 +63,26 @@ def home():
 
 @app.route('/schedules/<name>-<int:page_id>')
 def schedules(name, page_id):
+    TODAY = date.today()
+    FIRST_WEEK_LIST = convtime.date_on_week(TODAY, 1)
+    SECOND_WEEK_LIST = convtime.date_on_week(TODAY, 2)
+    query_list = []
+    classes_dbquery = db.Classes.selectBy(name=name).getOne()
+    for item in FIRST_WEEK_LIST:
+        dbquery = db.Timetable.select(AND(db.Timetable.q.date == str(item),
+                                      db.Timetable.q.classes == classes_dbquery.id))
+        query_list.append(dbquery)
+    query_list = tuple(query_list)
     col_name = ("Урок", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС")
-    row_name = (str(x) for x in range(1, 13))
-    lesson_name = ("Русский язык", "Математика", "ОБЖ", "История",
-                   "Английский язык", "Физкультура", "Черчение")
-    week = ({"start": "01 сентября",
-             "end": "08 сентября"},
-            {"start": "09 сентября",
-             "end": "16 сентября"})
+    row_name = (x for x in range(1, 13))
+    week = ({"start": str(FIRST_WEEK_LIST[0]),
+             "end": str(FIRST_WEEK_LIST[6])},
+            {"start": str(SECOND_WEEK_LIST[0]),
+             "end": str(SECOND_WEEK_LIST[6])})
     return render_template("schedules.html",
                            classname=name,
                            columns=col_name,
                            rows=row_name,
-                           lessons=lesson_name,
+                           timetables=query_list,
                            page_id=page_id,
                            week=week)
