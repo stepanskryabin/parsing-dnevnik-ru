@@ -30,3 +30,37 @@ def filtred_by_week(year: int,
             d = new_week
         result.append(d)
     return tuple(result)
+
+
+def date_on_week(today=None, week=None) -> tuple:
+    """Функция выводит список дат с понедельника по воскресенье
+    используя для этого только текущую дату
+
+    Args:
+        today (date): текущая дата
+        week (int): номер недели, где 1 - текущая, 2 следующая
+
+    Returns:
+        tuple: список дат с понедельника по воскресенье
+    """
+    if today is None:
+        TODAY = date.today()
+    else:
+        TODAY = today
+    if week is None:
+        WEEK = 1
+    else:
+        WEEK = week
+
+    WEEKDAY = date.weekday(TODAY)
+    a = [0,1,2,3,4,5,6]
+    FIRST_DAY = TODAY - timedelta(days=a.index(WEEKDAY))
+    result = []
+    if WEEK == 1:
+        for day in range(7):
+            result.append(FIRST_DAY + timedelta(day))
+        return tuple(result) 
+    elif WEEK == 2:
+        for day in range(7):
+            result.append(FIRST_DAY + timedelta(day) + timedelta(7))
+        return tuple(result)
