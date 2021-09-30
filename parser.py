@@ -123,7 +123,9 @@ def get_lessons(html) -> tuple[tuple]:
                     lesson_name = 'Урок отсутствует'
                 else:
                     lesson_name = lesson_name.get('title')
-                if lesson_info.div.p is None:
+                if lesson_info.div is None:
+                    continue
+                elif lesson_info.div.p is None:
                     continue
                 else:
                     first_p = lesson_info.div.p
