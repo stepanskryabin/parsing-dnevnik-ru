@@ -1,12 +1,22 @@
 {% extends "base.html" %}
+
 {% block menu %}
-<h4>Расписание уроков для {{ classname }} класса, с {{ week[page_id-1].get("start") }} по {{ week[page_id-1].get("end") }}</h4>
+<ul class="nav nav-pills justify-content-end">
+  <li class="nav-item">
+    <a class="nav-link active" aria-current="page" href="/home">Назад</a>
+  </li>
+</ul>
 {% endblock %}
+
+{% block title %}
+<h4>{{ classname }} класс, с {{ week[page_id-1].get("start") }} по {{ week[page_id-1].get("end") }}</h4>
+{% endblock %}
+
 {% block content %}
 <div class="container">
 <div class="table-responsive">
-<table class="table table-sm table-striped">
-  <thead>
+<table class="table table-sm table-striped table-bordered">
+  <thead class="table-dark">
     <tr>
       {% for column in columns %}
         <th class="fs-6 lh-sm" scope="col">{{ column }}</th>
@@ -16,17 +26,14 @@
   <tbody>
     <tr>
       {% for row in rows %}
-        <th class="fs-6 lh-sm" scope="row">{{ row }}</th>
+        <th class="lh-sm" scope="row">{{ row }}</th>
         {% for timetable in timetables %}
           {% for item in timetable %}
             {% if item.lesson_number == row %}
-              <td class="fs-6 lh-sm">{{ item.lesson_room }}
-                                    <br>
-                                    {{ item.lesson_name }}
-                                    <br>
-                                    {{ item.lesson_teacher }}
-                                    <br>
-                                    {{ item.lesson_time }}
+              <td class="fs-6 lh-1"><p class="fw-bold">{{ item.lesson_room }}</p>
+                  <p class="">{{ item.lesson_name }}</p>
+                  <p class="">{{ item.lesson_teacher }}</p>
+                  <p class="">{{ item.lesson_time }}</p>
                                     </td>
             {% endif %}
           {% endfor %}
@@ -39,8 +46,9 @@
 </div>
 </div>
 {% endblock %}
+
 {% block footer %}
-<nav aria-label="...">
+<nav aria-label="Pagination">
   <ul class="pagination">
     {%if page_id == 1 %}
       <li class="page-item active" aria-current="page">

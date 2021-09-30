@@ -8,43 +8,46 @@
 </head>
 <body>
     <div class="container-fluid">
-        <div class="row align-items-start">
-            <div class="col-md-1">
+        <div class="row justify-content-center" id="menu">
+            <div class="col">
+                <div class="container">
+                    <br>
+                    {% block menu %}
+                    {% endblock %}
+                    <br>
+                </div>
             </div>
-            <div class="col-md-1">
-                <br>
-                <ul class="nav nav-pills">
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="/home">Главная</a>
-                    </li>
-                </ul>
-                <br>
+            <div class="col">
+                <div class="container">
+                    <br>
+                    {% block title %}
+                    {% endblock %}
+                    <br>
+                </div>
             </div>
-            <div class="col-md-10">
-                <br>
-                {% block menu %}
-                {% endblock %}
-                <br>
+            <div class="col">
             </div>
         </div>
-        <div class="row align-items-center">
-            <div class="col-md-1">
+        <div class="row justify-content-center" id="content">
+            <div class="col">
             </div>
-            <div class="col-md-10">
+            <div class="col-xl-10">
+                <div class="container">
                 {% block content %}
                 {% endblock %}
+                </div>
             </div>
-            <div class="col-md-1">
+            <div class="col">
             </div>
         </div>
-        <div class="row align-items-end">
-            <div class="col-md-5">
+        <div class="row justify-content-center" id="footer">
+            <div class="col">
             </div>
-            <div class="col-md-7">
+            <div class="col">
                 {% block footer %}
                 {% endblock %}
             </div>
-            <div class="col-md-1">
+            <div class="col">
             </div>
         </div>
     </div>
