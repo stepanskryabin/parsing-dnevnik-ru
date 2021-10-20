@@ -31,6 +31,8 @@ DB = config['DATABASE']
 
 add_logging(LOGGING.getint('level'))
 
+# Дата с которой парсер должен начинать обрабатывать информацию
+TODAY = date.today()
 
 try:
     connect = orm.connectionForURI(DB.get('uri'))
@@ -286,9 +288,10 @@ def main(url: str):
     elif OS_NAME == 'posix':
         executable = "".join(("./", OTHER.get('browser_driver')))
     # Настраиваем и запускаем браузер
-    # options = webdriver.ChromeOptions()
-    # options.add_argument('--headless')
-    browser = webdriver.Chrome(executable_path=executable)
+    options = webdriver.ChromeOptions()
+    options.headless = True
+    browser = webdriver.Chrome(executable_path=executable,
+                               options=options)
     # Выставляем таймаут, чтобы браузер ждал 10 сек
     # после выполнения каждого действия
     browser.implicitly_wait(10)
@@ -310,9 +313,9 @@ def main(url: str):
     logger.debug(f"Все классы спарсены: {tuple_of_classes}")
     # Подготавливаем кортеж из всех ссылок на расписание
     schedules = get_schedules(tuple_of_classes=tuple_of_classes,
-                              start_year=PARAMETERS.getint('year'),
-                              start_month=PARAMETERS.getint('month'),
-                              start_day=PARAMETERS.getint('day'),
+                              start_year=TODAY.year,
+                              start_month=TODAY.month,
+                              start_day=TODAY.day,
                               deep_day=PARAMETERS.getint('deep_day'))
     logger.debug("Кортеж из ссылок на расписание сформирован")
     # Обходим кортеж ссылок и получаем html для обработки
@@ -323,8 +326,10 @@ def main(url: str):
         for lesson in lessons:
             write_db(lesson)
     browser.quit()
-    return
+    return True
 
 
 if __name__ == "__main__":
-    main(DNEVNIK_RU.get('login_url'))
+    run = main(DNEVNIK_RU.get('login_url'))
+    if run:
+        exit()
