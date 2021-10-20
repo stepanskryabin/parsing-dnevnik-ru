@@ -10,6 +10,7 @@ lxml = "*"
 flask = "*"
 sqlobject = "*"
 loguru = "*"
+python-crontab = "*"
 
 [dev-packages]
 flake8 = "*"
