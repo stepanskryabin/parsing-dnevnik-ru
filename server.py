@@ -1,5 +1,5 @@
 import configparser
-from datetime import date, timedelta
+from datetime import date
 
 from flask import Flask
 from flask import render_template
@@ -39,6 +39,7 @@ finally:
 
 
 app = Flask(__name__)
+TODAY = date.today()
 
 
 @app.route("/")
@@ -55,7 +56,7 @@ def home():
                "9а", "9б", "9в",
                "10",
                "11")
-    years = f"{PARAMETERS.getint('year')} / {PARAMETERS.getint('year') + 1}"
+    years = f"{TODAY.year} / {TODAY.year + 1}"
     return render_template("index.html",
                            classes=classes,
                            years=years)
@@ -63,22 +64,23 @@ def home():
 
 @app.route('/schedules/<name>-<int:page_id>')
 def schedules(name, page_id):
-    TODAY = date.today()
     WEEK_LIST = convtime.date_on_week(TODAY, page_id)
+    logger.debug(f"Список дат дней недели{str(WEEK_LIST)}")
     query_list = []
     row_list = []
     classes_dbquery = db.Classes.selectBy(name=name).getOne()
     for item in WEEK_LIST:
         dbquery = db.Timetable.select(AND(db.Timetable.q.date == str(item),
                                       db.Timetable.q.classes == classes_dbquery.id))
+        logger.debug(f"DBQUERY: {list(dbquery)}")
         for element in dbquery:
             row = element.lesson_number
             row_list.append(row)
         query_list.append(dbquery)
     query_list = tuple(query_list)
     row_list = set(row_list)
+    logger.debug(f"ROW_LIST: {row_list}")
     col_name = ("Урок", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС")
-    row_name = (x for x in range(1, 13))
     week = ({"start": str(WEEK_LIST[0]),
              "end": str(WEEK_LIST[6])},
             {"start": str(WEEK_LIST[0]),
