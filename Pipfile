@@ -5,15 +5,16 @@ name = "pypi"
 
 [packages]
 selenium = "*"
-beautifulsoup4 = "*"
-lxml = "*"
-flask = "*"
-sqlobject = "*"
-loguru = "*"
-python-crontab = "*"
+beautifulsoup4 = "==4.10.0"
+lxml = "==4.6.3"
+flask = "==2.0.2"
+sqlobject = "==3.9.1"
+loguru = "==0.5.3"
+python-crontab = "==2.6.0"
 
 [dev-packages]
 flake8 = "*"
+coverage = "*"
 
 [requires]
-python_version = "3.9"
+python_version = "3.10"
