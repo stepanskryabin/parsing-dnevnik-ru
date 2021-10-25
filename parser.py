@@ -91,7 +91,6 @@ def get_lessons(html) -> tuple[tuple]:
             logger.debug("Отсутствует ID")
             continue
         else:
-            logger.debug(f"Найдены ID: {schedules_date_id}")
             schedule_dates.append(schedules_date_id)
     schedule_dates = tuple(schedule_dates)
     #
@@ -99,7 +98,6 @@ def get_lessons(html) -> tuple[tuple]:
     lesson_numbers = []
     for item in all_tr:
         l_number: str = item.find('td', class_='wDS')
-        logger.debug("Найдены ячейки таблицы с номером урока")
         if l_number is None:
             logger.debug("Номер урока отсутствует")
             continue
@@ -148,12 +146,17 @@ def get_lessons(html) -> tuple[tuple]:
                               lesson_room)
                     schedules.append(result)
     schedules = tuple(schedules)
+    logger.debug("Кортеж с расписанием сформирован")
     return schedules
 
 
 def write_db(lesson: tuple[tuple]) -> None:
-    logger.debug(f'{lesson}')
-    # FIXME нет ссылки на таблицу Classes
+    """Функция записи данных в БД.
+
+    Args:
+        lesson (tuple[tuple]): [description]
+    """
+    logger.debug(f'Кортеж для записи: {lesson}')
     dbquery = db.Classes.selectBy(name=lesson[0],
                                   dnevnik_ru_id=lesson[1])
     if dbquery.count() == 0:
@@ -173,7 +176,6 @@ def write_db(lesson: tuple[tuple]) -> None:
                      lesson_teacher=lesson[5],
                      lesson_time=lesson[6],
                      classes=new_class)
-        logger.debug('Информация об уроке записана в БД')
         return
     except Exception as ERROR:
         logger.exception(f"Запись в БД неудачна: {ERROR}")
@@ -181,7 +183,7 @@ def write_db(lesson: tuple[tuple]) -> None:
 
 
 def get_classes(html) -> tuple[tuple]:
-    """Функция находит наименования учебных классов url-ссылки на них
+    """Функция находит наименования учебных классов, url-ссылки на них
     и их ID.
 
     Args:
@@ -283,10 +285,12 @@ def get_schedules(tuple_of_classes: tuple[tuple],
 
 
 def main(url: str):
+    logger.success("Парсер запущен")
     if OS_NAME == 'nt':
         executable = "".join((".\\", OTHER.get('browser_driver'), ".exe"))
     elif OS_NAME == 'posix':
         executable = "".join(("./", OTHER.get('browser_driver')))
+    logger.debug(f"Определяем тип OS: {OS_NAME}")
     # Настраиваем и запускаем браузер
     options = webdriver.ChromeOptions()
     options.headless = True
@@ -326,6 +330,7 @@ def main(url: str):
         for lesson in lessons:
             write_db(lesson)
     browser.quit()
+    logger.success("База расписаний обновлена")
     return True
 
 
