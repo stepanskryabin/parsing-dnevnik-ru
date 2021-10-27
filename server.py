@@ -92,3 +92,6 @@ def schedules(name, page_id):
                            timetables=query_list,
                            page_id=page_id,
                            week=week)
+
+if __name__ == "__main__":
+    app.run()
