@@ -78,6 +78,12 @@ export FLASK_ENV=development
 flask run
 ```
 
+### Запуск веб-сервера через Gunicorn
+
+```cmd
+gunicorn --bind 0.0.0.0:5000 server:app
+```
+
 ### Запуск веб-сервера Flask в Windows
 
 ```cmd
