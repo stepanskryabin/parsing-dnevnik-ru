@@ -139,4 +139,3 @@ chromedriver
 /log
 /database.db
 ngrok.exe
-setup.cfg
