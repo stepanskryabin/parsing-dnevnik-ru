@@ -28,7 +28,6 @@ PARAMETERS = config["PARAMETERS"]
 # loguru logger on
 add_logging(LOG.getint("level"))
 
-
 # Подключаемся к БД
 try:
     connection = orm.connectionForURI(database.get("uri"))
@@ -37,8 +36,8 @@ except Exception as ERROR:
 finally:
     orm.sqlhub.processConnection = connection
 
-
 app = Flask(__name__)
+
 TODAY = date.today()
 
 
@@ -70,8 +69,9 @@ def schedules(name, page_id):
     row_list = []
     classes_dbquery = db.Classes.selectBy(name=name).getOne()
     for item in WEEK_LIST:
-        dbquery = db.Timetable.select(AND(db.Timetable.q.date == str(item),
-                                      db.Timetable.q.classes == classes_dbquery.id))
+        dbquery = db.Timetable.select(
+            AND(db.Timetable.q.date == str(item),
+                db.Timetable.q.classes == classes_dbquery.id))
         logger.debug(f"DBQUERY: {list(dbquery)}")
         for element in dbquery:
             row = element.lesson_number
