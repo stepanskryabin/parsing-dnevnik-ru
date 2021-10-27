@@ -1,6 +1,7 @@
 import configparser
 from datetime import date
 from os import name as OS_NAME
+import os
 from collections import namedtuple
 
 from bs4 import BeautifulSoup
@@ -71,43 +72,34 @@ def get_lessons(html) -> tuple[namedtuple]:
         return result.isoformat()
 
     soup = BeautifulSoup(html, 'lxml')
-    content = soup.find('div', id='content')
-    schedules_classes: str = content.find('a', class_='blue')
+
+    schedules_classes = soup.find('a', class_='blue')
     logger.debug("Найдено имя учебного класса")
-    classes_group_id: str = schedules_classes.get('href')
+    classes_group_id = schedules_classes.get('href')
     logger.debug(f"Получена ссылка с ID класса: {classes_group_id}")
     dnevnik_id = int(classes_group_id.rsplit(sep='=')[1])
     logger.debug(f"Получен ID класса: {dnevnik_id}")
-    tbody = content.find('tbody')
-    all_th = tbody.find_all('th')
+
+    all_th = soup.find('tbody').find_all('th')
     logger.debug("Найдены все заголовки таблицы с расписанием")
-    all_tr = tbody.find_all('tr')
+    all_tr = soup.find('tbody').find_all('tr')
     logger.debug("Найдены все строки таблицы с расписанием")
-    #
-    # Первый цикл: находим все наименования дней недели
-    schedule_dates = []
-    for item in all_th:
-        schedules_date_id: str = item.get('id')
-        if schedules_date_id is None:
-            logger.debug("Отсутствует ID")
-            continue
-        else:
-            schedule_dates.append(schedules_date_id)
-    schedule_dates = tuple(schedule_dates)
-    #
-    # Второй цикл: находим номера уроков
+
+    # Находим все ID дат в расписании
+    schedule_dates = [i.get('id') for i in all_th if i.get('id') is not None]
+
+    # Находим номера уроков
     lesson_numbers = []
     for item in all_tr:
-        l_number: str = item.find('td', class_='wDS')
-        if l_number is None:
+        lesson_number = item.find('td', class_='wDS')
+        if lesson_number is None:
             logger.debug("Номер урока отсутствует")
             continue
         else:
-            lesson_number: int = int(l_number.strong.text)
-            lesson_numbers.append(lesson_number)
+            lesson_numbers.append(int(lesson_number.strong.text))
     lesson_numbers = tuple(lesson_numbers)
-    #
-    # Третий цикл: находим название урока, учителя, время и кабинет
+
+    # Находим название урока, учителя, время и кабинет
     # и кладём это в единый кортеж с уже включенными: датой урока и
     # номером урока
     lessons = []
@@ -127,7 +119,7 @@ def get_lessons(html) -> tuple[namedtuple]:
                 if lesson_info is None:
                     continue
                 else:
-                    lesson_name: str = lesson_info.find('a', class_='aL')
+                    lesson_name = lesson_info.find('a', class_='aL')
                 if lesson_name is None:
                     lesson_name = 'Урок отсутствует'
                 else:
@@ -215,7 +207,7 @@ def get_classes(html) -> tuple[namedtuple]:
         for item in first_li:
             second_li = item.find_all('li')
             for item in second_li:
-                url: str = item.find('a').get('href')
+                url = item.find('a').get('href')
                 if url is None:
                     class_name = None
                     class_id = None
@@ -225,7 +217,7 @@ def get_classes(html) -> tuple[namedtuple]:
                     # содержащий три объекта, где последний объект
                     # ID учебного класса
                     class_id = url.rsplit(sep="=")[2]
-                    class_name: str = item.a.text
+                    class_name = item.a.text
                     result = classes(class_name=class_name,
                                      url=url,
                                      class_id=class_id)
@@ -243,9 +235,9 @@ def get_schedules(tuple_of_classes: tuple[namedtuple],
     уроков от заданной даты и на заданную глубину
 
     Args:
-        tuple_of_classes (tuple[tuple]): кортеж содержащий имя учебного
-        класса, ссылку на его расписание и ID. Используется только
-        второй элемент кортежа.
+        tuple_of_classes (tuple[namedtuple]): кортеж содержащий именованный
+        кортеж (имя учебного класса, ссылку на его расписание и ID).
+        Используется только второй элемент именованого кортежа.
         start_year (int): год начала загрузки расписания
         start_month (int): месяц начала загрузки расписания
         start_day (int): день начала загрузки расписания
@@ -337,8 +329,7 @@ def main(url: str):
     # Обходим кортеж ссылок и получаем html для обработки
     for schedule in schedules:
         browser.get(schedule)
-        raw_html = browser.page_source
-        lessons = get_lessons(raw_html)
+        lessons = get_lessons(browser.page_source)
         for lesson in lessons:
             status = write_db(lesson)
             logger.debug(f"Попытка записи данных в БД - результат: {status}")
