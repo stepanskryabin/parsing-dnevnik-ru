@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-selenium = "*"
+selenium = "==4.0.0"
 beautifulsoup4 = "==4.10.0"
 lxml = "==4.6.3"
 flask = "==2.0.2"
