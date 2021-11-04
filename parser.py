@@ -1,14 +1,13 @@
 import configparser
 from datetime import date
 from os import name as OS_NAME
-import os
 from collections import namedtuple
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
-import sqlobject as orm
 
-from models import db
+
+from models import dbhandler
 from controller import convtime
 
 # ************** Logging beginning *******************
@@ -36,14 +35,7 @@ add_logging(LOGGING.getint('level'))
 # Дата с которой парсер должен начинать обрабатывать информацию
 TODAY = date.today()
 
-try:
-    connect = orm.connectionForURI(DB.get('uri'))
-    logger.debug(f"Читаем адрес БД: {DB.get('uri')}")
-except Exception as ERROR:
-    logger.exception(f'Ошибка подключения к БД: {ERROR}')
-else:
-    orm.sqlhub.processConnection = connect
-    logger.debug('Подключение к БД выполнено успешно')
+db = dbhandler.DBHandler(DB.get('uri'))
 
 
 def get_lessons(html) -> tuple[namedtuple]:
@@ -157,25 +149,14 @@ def write_db(lesson: tuple[namedtuple]) -> str:
         lesson (tuple[namedtuple]): [description]
     """
     logger.debug(f'Кортеж для записи: {lesson}')
-    dbquery = db.Classes.selectBy(name=lesson.classes_name,
-                                  dnevnik_id=lesson.dnevnik_id)
-    if dbquery.count() == 0:
-        new_class = db.Classes(name=lesson.classes_name,
-                               dnevnik_id=lesson.dnevnik_id)
-    elif dbquery.count() == 1:
-        new_class = dbquery.getOne().id
-    else:
-        logger.debug("Записей больше одной")
-        pass
-
     try:
-        db.Timetable(date=lesson.date,
-                     lesson_number=lesson.lesson_number,
-                     lesson_name=lesson.lesson_name,
-                     lesson_room=lesson.lesson_room,
-                     lesson_teacher=lesson.lesson_teacher,
-                     lesson_time=lesson.lesson_time,
-                     classes=new_class)
+        db.add_new_timetable(name=lesson.classes_name,
+                             dnevnik_id=lesson.dnevnik_id,
+                             date=lesson.date,
+                             lesson_name=lesson.lesson_name,
+                             lesson_room=lesson.lesson_room,
+                             lesson_teacher=lesson.lesson_teacher,
+                             lesson_time=lesson.lesson_time)
         return "Ok"
     except Exception as ERROR:
         logger.exception(f"Запись в БД неудачна: {ERROR}")
