@@ -1,10 +1,8 @@
-from collections import namedtuple
 import configparser
 import inspect
 import sys
 
 import sqlobject as orm
-from sqlobject.sqlbuilder import AND
 from sqlobject.main import SQLObjectIntegrityError, SQLObjectNotFound
 from sqlobject.main import SelectResults
 
@@ -56,7 +54,8 @@ class DBHandler:
             # Create tables in database for each class
             # that is located in models module
             class_ = getattr(models, item)
-            class_.createTable(ifNotExists=True)
+            class_.createTable(ifNotExists=True,
+                               connection=self._connection)
         return "Ok"
 
     def delete(self) -> None:
@@ -65,15 +64,17 @@ class DBHandler:
             class_ = getattr(models, item)
             class_.dropTable(ifExists=True, 
                              dropJoinTables=True,
-                             cascade=True)
+                             cascade=True,
+                             connection=self._connection)
         return "Ok"
 
-    @staticmethod
-    def __read_classes(get_one: bool,
+    def __read_classes(self,
+                       get_one: bool,
                        **kwargs) -> SelectResults:
         if get_one:
             try:
-                dbquery = models.Classes.selectBy(**kwargs).getOne()
+                dbquery = models.Classes.selectBy(self._connection,
+                                                  **kwargs).getOne()
             except SQLObjectNotFound:
                 raise DatabaseReadError("Class is not in the database")
             except Exception as err:
@@ -82,7 +83,8 @@ class DBHandler:
                 return dbquery
         else:
             try:
-                dbquery = models.Classes.selectBy(**kwargs)
+                dbquery = models.Classes.selectBy(self._connection,
+                                                  **kwargs)
             except SQLObjectNotFound:
                 raise DatabaseReadError("No classes data in the database")
             except Exception as err:
@@ -90,21 +92,24 @@ class DBHandler:
             else:
                 return dbquery
 
-    @staticmethod
-    def __write_classes(**kwargs) -> None:
+    def __write_classes(self,
+                        **kwargs) -> models.Classes:
         try:
-            models.Classes(**kwargs)
+            dbquery = models.Classes(**kwargs)
         except SQLObjectIntegrityError:
             raise DatabaseWriteError("Writing is restricted")
         except Exception as err:
             raise DatabaseAccessError from err
+        else:
+            return dbquery
 
-    @staticmethod
-    def __read_timetables(get_one: bool,
+    def __read_timetables(self,
+                          get_one: bool,
                           **kwargs) -> SelectResults:
         if get_one:
             try:
-                dbquery = models.Timetable.selectBy(**kwargs).getOne()
+                dbquery = models.Timetable.selectBy(self._connection,
+                                                    **kwargs).getOne()
             except SQLObjectNotFound:
                 raise DatabaseReadError("Timetable is not in the database")
             except Exception as err:
@@ -113,7 +118,8 @@ class DBHandler:
                 return dbquery
         else:
             try:
-                dbquery = models.Timetable.selectBy(**kwargs)
+                dbquery = models.Timetable.selectBy(self._connection,
+                                                    **kwargs)
             except SQLObjectNotFound:
                 raise DatabaseReadError("No timetables data in the database")
             except Exception as err:
@@ -121,16 +127,18 @@ class DBHandler:
             else:
                 return dbquery
 
-    @staticmethod
-    def __write_timetables(**kwargs) -> None:
+    def __write_timetables(self,
+                           **kwargs) -> models.Timetable:
         try:
-            models.Timetable(**kwargs)
+            dbquery = models.Timetable(**kwargs)
         except SQLObjectIntegrityError:
             raise DatabaseWriteError("Writing is restricted")
         except Exception as err:
             raise DatabaseAccessError from err
+        else:
+            return dbquery
 
-    def get_classes_by_name_and_dnevnikid(self,
+    def get_classes_by_name_and_id(self,
                                    name: str,
                                    dnevnik_id: int) -> SelectResults:
         return self.__read_classes(get_one=True,
@@ -152,18 +160,19 @@ class DBHandler:
                           lesson_room: str,
                           lesson_teacher: str,
                           lesson_time: str) -> None:
-        dbquery = self.get_classes_by_name_and_dnevnikid(name=name,
-                                                         dnevnik_id=dnevnik_id)
-        if dbquery.count() == 0:
+        try:
+            dbquery = self.get_classes_by_name_and_id(name=name,
+                                                      dnevnik_id=dnevnik_id)
+        except DatabaseReadError:
             new_class = self.add_new_class(name=name,
                                            dnevnik_id=dnevnik_id)
-        elif dbquery.count() == 1:
-            new_class = dbquery.getOne().id
-
-        return self.__write_timetables(date=date,
-                                       lesson_number=lesson_number,
-                                       lesson_name=lesson_name,
-                                       lesson_room=lesson_room,
-                                       lesson_teacher=lesson_teacher,
-                                       lesson_time=lesson_time,
-                                       classes=new_class)
+        else:
+            new_class = dbquery.id
+        finally:
+            return self.__write_timetables(date=date,
+                                           lesson_number=lesson_number,
+                                           lesson_name=lesson_name,
+                                           lesson_room=lesson_room,
+                                           lesson_teacher=lesson_teacher,
+                                           lesson_time=lesson_time,
+                                           classes=new_class)
