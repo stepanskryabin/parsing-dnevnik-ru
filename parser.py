@@ -33,12 +33,13 @@ DB = config['DATABASE']
 add_logging(LOGGING.getint('level'))
 
 # Дата с которой парсер должен начинать обрабатывать информацию
-TODAY = date.today()
+#TODAY = date.today()
+TODAY = date(2021, 10, 1)
 
 db = dbhandler.DBHandler(DB.get('uri'))
 
 
-def get_lessons(html) -> tuple[namedtuple]:
+def get_lessons(html) -> tuple[namedtuple] | str:
     """Функция парсит полученный HTML и записывает информацию в кортеж.
     Записывается: наименование класса, ID класса, дата в формате ISO,
     номер урока, название урока, имя учителя, номер кабинета, время урока.
@@ -71,6 +72,9 @@ def get_lessons(html) -> tuple[namedtuple]:
     logger.debug(f"Получена ссылка с ID класса: {classes_group_id}")
     dnevnik_id = int(classes_group_id.rsplit(sep='=')[1])
     logger.debug(f"Получен ID класса: {dnevnik_id}")
+
+    if soup.find('tbody') is None:
+        return 'Error'
 
     all_th = soup.find('tbody').find_all('th')
     logger.debug("Найдены все заголовки таблицы с расписанием")
@@ -153,6 +157,7 @@ def write_db(lesson: tuple[namedtuple]) -> str:
         db.add_new_timetable(name=lesson.classes_name,
                              dnevnik_id=lesson.dnevnik_id,
                              date=lesson.date,
+                             lesson_number=lesson.lesson_number,
                              lesson_name=lesson.lesson_name,
                              lesson_room=lesson.lesson_room,
                              lesson_teacher=lesson.lesson_teacher,
@@ -178,7 +183,7 @@ def get_classes(html) -> tuple[namedtuple]:
     soup = BeautifulSoup(html, 'lxml')
     ul = soup.find('ul', class_='classes')
     data = []
-    classes = namedtuple('Classes', ["class_name",
+    Classes = namedtuple('Classes', ["class_name",
                                      "url",
                                      "class_id"])
     if ul is None:
@@ -199,7 +204,7 @@ def get_classes(html) -> tuple[namedtuple]:
                     # ID учебного класса
                     class_id = url.rsplit(sep="=")[2]
                     class_name = item.a.text
-                    result = classes(class_name=class_name,
+                    result = Classes(class_name=class_name,
                                      url=url,
                                      class_id=class_id)
                     data.append(result)
@@ -211,7 +216,7 @@ def get_schedules(tuple_of_classes: tuple[namedtuple],
                   start_year: int,
                   start_month: int,
                   start_day: int,
-                  deep_day: int) -> set:
+                  deep_day: int) -> set | str:
     """Функция генерирует кортеж с ссылками на расписание
     уроков от заданной даты и на заданную глубину
 
@@ -254,22 +259,25 @@ def get_schedules(tuple_of_classes: tuple[namedtuple],
                                             deep_day)
 
     result = []
-    for item in tuple_of_classes:
+    if tuple_of_classes is None:
+        return 'Error'
+    else:
+        for item in tuple_of_classes:
         # в кортеже list_of_classes находится вложенный именованый
         # кортеж из трёх элементов: название учебного класса,
         # сылка на расписание, ID в системе dnevnikru
-        for d in date_filtred:
-            schedules = ''.join([f'{item.url}',
+            for d in date_filtred:
+                schedules = ''.join([f'{item.url}',
                                  f'&period={get_trimester(d)}',
                                  f'&year={d.year}',
                                  f'&month={d.month}',
                                  f'&day={d.day}'])
-            result.append(schedules)
-    logger.debug(f"Список ссылок на расписание: {result}")
-    return set(result)
+                result.append(schedules)
+        logger.debug(f"Список ссылок на расписание: {tuple_of_classes}")
+        return set(result)
 
 
-def main(url: str):
+def main(url: str) -> bool:
     logger.success("Парсер запущен")
     if OS_NAME == 'nt':
         executable = "".join((".\\", OTHER.get('browser_driver'), ".exe"))
@@ -295,7 +303,7 @@ def main(url: str):
     # Переходим на страницу школьных расписаний с актуальным годом
     browser.get(''.join([f'{DNEVNIK_RU.get("schedules_url")}',
                          f'?school={PARAMETERS.get("school")}',
-                         f'&tab=groups&year={PARAMETERS.get("year")}']))
+                         f'&tab=groups&year={TODAY.year}']))
     logger.debug("Переход на страницу с расписаниями")
     # Парсим ссылки на все классы
     tuple_of_classes = get_classes(browser.page_source)
@@ -306,16 +314,22 @@ def main(url: str):
                               start_month=TODAY.month,
                               start_day=TODAY.day,
                               deep_day=PARAMETERS.getint('deep_day'))
+    if schedules == 'Error':
+        logger.error("Кортеж с ссылками на расписание пустой")
+        return True
     logger.debug("Кортеж из ссылок на расписание сформирован")
     # Обходим кортеж ссылок и получаем html для обработки
     for schedule in schedules:
         browser.get(schedule)
         lessons = get_lessons(browser.page_source)
+        if lessons == "Error":
+            logger.error("Отсутствует расписание занятий")
+            break
         for lesson in lessons:
             status = write_db(lesson)
             logger.debug(f"Попытка записи данных в БД - результат: {status}")
-    browser.quit()
     logger.success("База расписаний обновлена")
+    browser.quit()
     return True
 
 
