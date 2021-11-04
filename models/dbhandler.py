@@ -5,6 +5,7 @@ import sys
 import sqlobject as orm
 from sqlobject.main import SQLObjectIntegrityError, SQLObjectNotFound
 from sqlobject.main import SelectResults
+from sqlobject.sqlbuilder import AND
 
 from models import models
 
@@ -176,3 +177,12 @@ class DBHandler:
                                            lesson_teacher=lesson_teacher,
                                            lesson_time=lesson_time,
                                            classes=new_class)
+
+    def get_timetable_by_classes(self,
+                                 name: str,
+                                 date: str) -> SelectResults:
+        classes = self.__read_classes(get_one=True,
+                                      name=name)
+        return models.Timetable.select(AND(
+                                       models.Timetable.q.date == date,
+                                       models.Timetable.q.classes == classes))
