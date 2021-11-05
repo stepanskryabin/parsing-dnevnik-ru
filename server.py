@@ -33,7 +33,8 @@ db = dbhandler.DBHandler(DB.get("uri"))
 
 app = Flask(__name__)
 
-TODAY = date(2021, 10, 1)
+TODAY = date.today()
+#TODAY = date(2021, 10, 1)
 
 
 @app.route("/")

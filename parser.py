@@ -9,6 +9,7 @@ from selenium import webdriver
 
 from models import dbhandler
 from controller import convtime
+from server import TODAY
 
 # ************** Logging beginning *******************
 from loguru import logger
@@ -31,10 +32,6 @@ DB = config['DATABASE']
 # ************** END **********************************
 
 add_logging(LOGGING.getint('level'))
-
-# Дата с которой парсер должен начинать обрабатывать информацию
-#TODAY = date.today()
-TODAY = date(2021, 10, 1)
 
 db = dbhandler.DBHandler(DB.get('uri'))
 
