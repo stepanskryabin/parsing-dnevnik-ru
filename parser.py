@@ -96,7 +96,7 @@ def get_lessons(html) -> tuple[namedtuple] | str:
     # и кладём это в единый кортеж с уже включенными: датой урока и
     # номером урока
     lessons = []
-    schedules = namedtuple('Schedules', ["classes_name",
+    Schedules = namedtuple('Schedules', ["classes_name",
                                          "dnevnik_id",
                                          "date",
                                          "lesson_number", 
@@ -130,7 +130,7 @@ def get_lessons(html) -> tuple[namedtuple] | str:
                     lesson_time: str = third_p.text
                     fourth_p = third_p.find_next('p')
                     lesson_room: str = fourth_p.text
-                    result = schedules(classes_name=schedules_classes.text,
+                    result = Schedules(classes_name=schedules_classes.text,
                                        dnevnik_id=dnevnik_id,
                                        date=convert_to_isodate(schedules_date),
                                        lesson_number=lesson_number,
