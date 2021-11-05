@@ -3,24 +3,24 @@ from datetime import date
 
 from flask import Flask
 from flask import render_template
-import sqlobject as orm
-from sqlobject import AND
 
 from controller import convtime
-from models import db
+from models import dbhandler
 
 # ************** Logging beginning *******************
 from loguru import logger
 from controller.logger import add_logging
 # ************** Unicorn logger off ******************
 import logging
+
+
 logging.disable()
 # ************** Logging end *************************
 
 # ****************************************************
 config = configparser.ConfigParser()
 config.read("config.ini")
-database = config['DATABASE']
+DB = config['DATABASE']
 LOG = config['LOGGING']
 PARAMETERS = config["PARAMETERS"]
 # ****************************************************
@@ -29,16 +29,12 @@ PARAMETERS = config["PARAMETERS"]
 add_logging(LOG.getint("level"))
 
 # Подключаемся к БД
-try:
-    connection = orm.connectionForURI(database.get("uri"))
-except Exception as ERROR:
-    logger.exception(str(ERROR))
-finally:
-    orm.sqlhub.processConnection = connection
+db = dbhandler.DBHandler(DB.get("uri"))
 
 app = Flask(__name__)
 
 TODAY = date.today()
+#TODAY = date(2021, 10, 1)
 
 
 @app.route("/")
@@ -67,11 +63,9 @@ def schedules(name, page_id):
     logger.debug(f"Список дат дней недели{str(WEEK_LIST)}")
     query_list = []
     row_list = []
-    classes_dbquery = db.Classes.selectBy(name=name).getOne()
     for item in WEEK_LIST:
-        dbquery = db.Timetable.select(
-            AND(db.Timetable.q.date == str(item),
-                db.Timetable.q.classes == classes_dbquery.id))
+        dbquery = db.get_timetable_by_classes(name=name,
+                                              date=str(item))
         logger.debug(f"DBQUERY: {list(dbquery)}")
         for element in dbquery:
             row = element.lesson_number

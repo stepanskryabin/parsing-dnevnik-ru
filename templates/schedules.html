@@ -30,11 +30,17 @@
         {% for timetable in timetables %}
           {% for item in timetable %}
             {% if item.lesson_number == row %}
-              <td class="fs-6 lh-1"><p class="fw-bold">{{ item.lesson_room }}</p>
-                  <p class="">{{ item.lesson_name }}</p>
-                  <p class="">{{ item.lesson_teacher }}</p>
-                  <p class="">{{ item.lesson_time }}</p>
-                                    </td>
+              <td>
+                <p class="fs-6 lh-1">
+                  <strong>{{ item.lesson_room }}</strong>
+                  <br>
+                  {{ item.lesson_name }}
+                  <br>
+                  {{ item.lesson_teacher }}
+                  <br>
+                  {{ item.lesson_time }}
+                </p>
+              </td>
             {% endif %}
           {% endfor %}
         {% endfor %}
