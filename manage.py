@@ -8,7 +8,7 @@ from controller import schedules
 
 # ************** Read "config.ini" ********************
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read('config.ini', encoding="utf-8-sig")
 logging = config['LOGGING']
 DB = config["DATABASE"]
 SCHEDULES = config["SCHEDULES"]

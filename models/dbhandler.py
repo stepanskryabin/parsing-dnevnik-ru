@@ -12,7 +12,7 @@ from models import models
 
 # ************** Read "config.ini" ********************
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read('config.ini', encoding="utf-8-sig")
 database = config["DATABASE"]
 # ************** END **********************************
 
