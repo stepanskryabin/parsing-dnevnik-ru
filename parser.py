@@ -1,4 +1,3 @@
-import configparser
 from datetime import date
 from os import name as OS_NAME
 from collections import namedtuple
@@ -6,10 +5,17 @@ from collections import namedtuple
 from bs4 import BeautifulSoup
 from selenium import webdriver
 
-
 from models import dbhandler
 from controller import convtime
 from server import TODAY
+from controller.config import LOGGING
+from controller.config import DNEVNIK_RU
+from controller.config import TRIMESTER
+from controller.config import OTHER
+from controller.config import PARAMETERS
+from controller.config import USER
+from controller.config import DB
+
 
 # ************** Logging beginning *******************
 from loguru import logger
@@ -19,17 +25,6 @@ import logging
 logging.disable()
 # ************** Logging end *************************
 
-# ************** Read "config.ini" ********************
-config = configparser.ConfigParser()
-config.read('config.ini')
-USER = config['USER']
-PARAMETERS = config['PARAMETERS']
-OTHER = config['OTHER']
-LOGGING = config['LOGGING']
-DNEVNIK_RU = config['DNEVNIK_RU']
-TRIMESTER = config['TRIMESTER']
-DB = config['DATABASE']
-# ************** END **********************************
 
 add_logging(LOGGING.getint('level'))
 

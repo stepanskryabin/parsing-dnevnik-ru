@@ -8,13 +8,7 @@ from sqlobject.main import SelectResults
 from sqlobject.sqlbuilder import AND
 
 from models import models
-
-
-# ************** Read "config.ini" ********************
-config = configparser.ConfigParser()
-config.read('config.ini', encoding="utf-8-sig")
-database = config["DATABASE"]
-# ************** END **********************************
+from controller.config import DB
 
 
 class DatabaseReadError(SQLObjectNotFound):
@@ -31,7 +25,7 @@ class DatabaseWriteError(SQLObjectNotFound):
 
 class DBHandler:
     def __init__(self,
-                 uri: str = database.get("uri")) -> None:
+                 uri: str = DB.get("uri")) -> None:
         self._uri = uri
         self._connection = orm.connectionForURI(self._uri)
         orm.sqlhub.processConnection = self._connection

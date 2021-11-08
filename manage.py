@@ -1,18 +1,11 @@
 from time import process_time
-import configparser
 
 import click
 
 from models import dbhandler
 from controller import schedules
-
-# ************** Read "config.ini" ********************
-config = configparser.ConfigParser()
-config.read('config.ini', encoding="utf-8-sig")
-logging = config['LOGGING']
-DB = config["DATABASE"]
-SCHEDULES = config["SCHEDULES"]
-# ************** END **********************************
+from controller.config import DB
+from controller.config import SCHEDULES
 
 db = dbhandler.DBHandler(DB.get('uri'))
 sc = schedules.Schedule(SCHEDULES.get('hour'))

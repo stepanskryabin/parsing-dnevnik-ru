@@ -1,4 +1,3 @@
-import configparser
 from datetime import date
 
 from flask import Flask
@@ -6,27 +5,20 @@ from flask import render_template
 
 from controller import convtime
 from models import dbhandler
+from controller.config import LOGGING
+from controller.config import DB
 
 # ************** Logging beginning *******************
 from loguru import logger
 from controller.logger import add_logging
 # ************** Unicorn logger off ******************
 import logging
-
-
 logging.disable()
 # ************** Logging end *************************
 
-# ****************************************************
-config = configparser.ConfigParser()
-config.read("config.ini")
-DB = config['DATABASE']
-LOG = config['LOGGING']
-PARAMETERS = config["PARAMETERS"]
-# ****************************************************
 
 # loguru logger on
-add_logging(LOG.getint("level"))
+add_logging(LOGGING.getint("level"))
 
 # Подключаемся к БД
 db = dbhandler.DBHandler(DB.get("uri"))
