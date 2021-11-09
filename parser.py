@@ -104,36 +104,46 @@ def get_lessons(html) -> tuple[namedtuple] | str:
             for lesson_number in lesson_numbers:
                 lesson_info = item.find('td',
                                         id=f'{schedules_date}_{lesson_number}')
+                #logger.debug(f"LESSON INFO1: {lesson_info}")
                 if lesson_info is None:
+                    #logger.debug(f"LESSON INFO2: {lesson_info}")
                     continue
                 else:
-                    lesson_name = lesson_info.find('a', class_='aL')
-                if lesson_name is None:
-                    lesson_name = 'Урок отсутствует'
-                else:
-                    lesson_name = lesson_name.get('title')
-                if lesson_info.div is None:
-                    continue
-                elif lesson_info.div.p is None:
-                    continue
-                else:
-                    first_p = lesson_info.div.p
-                    _ = first_p.get('title')
-                    second_p = first_p.find_next('p')
-                    lesson_teacher: str = second_p.text
-                    third_p = second_p.find_next('p')
-                    lesson_time: str = third_p.text
-                    fourth_p = third_p.find_next('p')
-                    lesson_room: str = fourth_p.text
-                    result = Schedules(classes_name=schedules_classes.text,
-                                       dnevnik_id=dnevnik_id,
-                                       date=convert_to_isodate(schedules_date),
-                                       lesson_number=lesson_number,
-                                       lesson_name=lesson_name,
-                                       lesson_room=lesson_room,
-                                       lesson_teacher=lesson_teacher,
-                                       lesson_time=lesson_time)
-                    lessons.append(result)
+                    all_div = lesson_info.find_all('div')
+                    logger.debug(f"ALL DIV: {all_div}")
+                    for div in all_div:
+                        div_class = div.get('class')
+                        if div_class == ['popup', 'shadow']:
+                            logger.debug(f"DIV GET1: {div_class}")
+                            continue
+                        elif div_class == ["dL"]:
+                            logger.debug(f"DIV GET2: {div_class}")
+                            lesson_name = div.find('a', class_='aL').get('title')
+                            logger.debug(f"LESSON NAME1: {lesson_name}")
+                            first_p = div.p
+                            _ = first_p.get('title')
+                            second_p = first_p.find_next('p')
+                            lesson_teacher: str = second_p.text
+                            third_p = second_p.find_next('p')
+                            lesson_time: str = third_p.text
+                            fourth_p = third_p.find_next('p')
+                            lesson_room: str = fourth_p.text
+                        elif div_class == ["dLE"]:
+                            logger.debug(f"DIV GET3: {div_class}")
+                            lesson_name = None
+                            lesson_room = None
+                            lesson_teacher = None
+                            lesson_time = None
+                        result = Schedules(classes_name=schedules_classes.text,
+                                           dnevnik_id=dnevnik_id,
+                                           date=convert_to_isodate(schedules_date),
+                                           lesson_number=lesson_number,
+                                           lesson_name=lesson_name,
+                                           lesson_room=lesson_room,
+                                           lesson_teacher=lesson_teacher,
+                                           lesson_time=lesson_time)
+                        lessons.append(result)
+
     logger.debug("Кортеж с расписанием сформирован")
     return tuple(lessons)
 
@@ -226,7 +236,6 @@ def get_schedules(tuple_of_classes: tuple[namedtuple],
     """
 
     def get_trimester(request_date) -> int:
-        logger.debug(f"Дата запроса: {request_date}")
         number_of_trimester = (DNEVNIK_RU.getint('1trimester'),
                                DNEVNIK_RU.getint('2trimester'),
                                DNEVNIK_RU.getint('3trimester'))
