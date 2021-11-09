@@ -27,22 +27,26 @@
     <tr>
       {% for row in rows %}
         <th class="lh-sm" scope="row">{{ row }}</th>
-        {% for timetable in timetables %}
-          {% for item in timetable %}
-            {% if item.lesson_number == row %}
-              <td>
-                <p class="fs-6 lh-1">
-                  <strong>{{ item.lesson_room }}</strong>
+        {% for week_column in week_list %}
+        <td>
+          {% for timetable in timetables %}
+            {% for item in timetable %}
+              {% if item.date == week_column.str_date %}
+                {% if item.lesson_number == row %}
+                  <p class="fs-6 lh-1">
+                  <strong>{% if item.lesson_room == none %}{% else %}{{ item.lesson_room }}{% endif %}</strong>
                   <br>
-                  {{ item.lesson_name }}
+                  {% if item.lesson_room == none %}{% else %}{{ item.lesson_name }}{% endif %}
                   <br>
-                  {{ item.lesson_teacher }}
+                  {% if item.lesson_room == none %}{% else %}{{ item.lesson_teacher }}{% endif %}
                   <br>
-                  {{ item.lesson_time }}
-                </p>
-              </td>
-            {% endif %}
+                  {% if item.lesson_room == none %}{% else %}{{ item.lesson_time }}{% endif %}
+                  </p>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
           {% endfor %}
+        </td>
         {% endfor %}
         </tr>
         <tr>
