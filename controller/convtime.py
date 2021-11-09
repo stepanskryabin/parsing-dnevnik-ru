@@ -1,3 +1,4 @@
+from collections import namedtuple
 from datetime import timedelta, date
 
 
@@ -32,7 +33,8 @@ def filtred_by_week(year: int,
     return tuple(result)
 
 
-def date_on_week(today=None, week=None) -> tuple:
+def date_on_week(today=None,
+                 week=None) -> tuple:
     """Функция выводит список дат с понедельника по воскресенье
     используя для этого только текущую дату
 
@@ -51,16 +53,37 @@ def date_on_week(today=None, week=None) -> tuple:
         WEEK = 1
     else:
         WEEK = week
-
+    Date = namedtuple("Date", ["name",
+                               "date",
+                               "str_date"])
+    WEEKDAY_NAME= ("ПН",
+                   "ВТ",
+                   "СР",
+                   "ЧТ",
+                   "ПТ",
+                   "СБ",
+                   "ВС")
     WEEKDAY = date.weekday(TODAY)
-    a = [0,1,2,3,4,5,6]
+    a = [0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         6]
     FIRST_DAY = TODAY - timedelta(days=a.index(WEEKDAY))
     result = []
     if WEEK == 1:
         for day in range(7):
-            result.append(FIRST_DAY + timedelta(day))
+            date_ = FIRST_DAY + timedelta(day)
+            result.append(Date(name=WEEKDAY_NAME[day],
+                               date=date_,
+                               str_date=str(date_)))
         return tuple(result) 
     elif WEEK == 2:
         for day in range(7):
-            result.append(FIRST_DAY + timedelta(day) + timedelta(7))
+            date_ = FIRST_DAY + timedelta(day) + timedelta(7)
+            result.append(Date(name=WEEKDAY_NAME[day],
+                               date=date_,
+                               str_date=str(date_)))
         return tuple(result)
