@@ -60,7 +60,10 @@ def get_lessons(html) -> tuple[namedtuple] | str:
 
     schedules_classes = soup.find('a', class_='blue')
     logger.debug("Найдено имя учебного класса")
-    classes_group_id = schedules_classes.get('href')
+    if schedules_classes is None:
+        return 'Error'
+    else:
+        classes_group_id = schedules_classes.get('href')
     logger.debug(f"Получена ссылка с ID класса: {classes_group_id}")
     dnevnik_id = int(classes_group_id.rsplit(sep='=')[1])
     logger.debug(f"Получен ID класса: {dnevnik_id}")
@@ -110,16 +113,16 @@ def get_lessons(html) -> tuple[namedtuple] | str:
                     continue
                 else:
                     all_div = lesson_info.find_all('div')
-                    logger.debug(f"ALL DIV: {all_div}")
+                    #logger.debug(f"ALL DIV: {all_div}")
                     for div in all_div:
                         div_class = div.get('class')
                         if div_class == ['popup', 'shadow']:
-                            logger.debug(f"DIV GET1: {div_class}")
+                            #logger.debug(f"DIV GET1: {div_class}")
                             continue
                         elif div_class == ["dL"]:
-                            logger.debug(f"DIV GET2: {div_class}")
+                            #logger.debug(f"DIV GET2: {div_class}")
                             lesson_name = div.find('a', class_='aL').get('title')
-                            logger.debug(f"LESSON NAME1: {lesson_name}")
+                            #logger.debug(f"LESSON NAME1: {lesson_name}")
                             first_p = div.p
                             _ = first_p.get('title')
                             second_p = first_p.find_next('p')
@@ -129,7 +132,7 @@ def get_lessons(html) -> tuple[namedtuple] | str:
                             fourth_p = third_p.find_next('p')
                             lesson_room: str = fourth_p.text
                         elif div_class == ["dLE"]:
-                            logger.debug(f"DIV GET3: {div_class}")
+                            #logger.debug(f"DIV GET3: {div_class}")
                             lesson_name = None
                             lesson_room = None
                             lesson_teacher = None
