@@ -52,32 +52,34 @@ def home():
 @app.route('/schedules/<name>-<int:page_id>')
 def schedules(name, page_id):
     WEEK_LIST = convtime.date_on_week(TODAY, page_id)
-    logger.debug(f"Список дат дней недели{str(WEEK_LIST)}")
+    logger.debug(f"Список дат дней недели{WEEK_LIST}")
     query_list = []
     row_list = []
     for item in WEEK_LIST:
         dbquery = db.get_timetable_by_classes(name=name,
-                                              date=str(item))
+                                              date=str(item.date))
         logger.debug(f"DBQUERY: {list(dbquery)}")
         for element in dbquery:
             row = element.lesson_number
             row_list.append(row)
         query_list.append(dbquery)
     query_list = tuple(query_list)
+    logger.debug(f"Timetable: {list(query_list)}")
     row_list = set(row_list)
     logger.debug(f"ROW_LIST: {row_list}")
     col_name = ("Урок", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС")
-    week = ({"start": str(WEEK_LIST[0]),
-             "end": str(WEEK_LIST[6])},
-            {"start": str(WEEK_LIST[0]),
-             "end": str(WEEK_LIST[6])})
+    week = ({"start": str(WEEK_LIST[0].date),
+             "end": str(WEEK_LIST[6].date)},
+            {"start": str(WEEK_LIST[0].date),
+             "end": str(WEEK_LIST[6].date)})
     return render_template("schedules.html",
                            classname=name,
                            columns=col_name,
                            rows=row_list,
                            timetables=query_list,
                            page_id=page_id,
-                           week=week)
+                           week=week,
+                           week_list=WEEK_LIST)
 
 if __name__ == "__main__":
     app.run()
