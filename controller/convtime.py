@@ -1,6 +1,14 @@
 from collections import namedtuple
 from datetime import timedelta, date
 
+# ************** Logging beginning *******************
+from loguru import logger
+from controller.logger import add_logging
+# ************** Unicorn logger off ******************
+import logging
+logging.disable()
+# ************** Logging end *************************
+
 
 def filtred_by_week(year: int,
                     month: int,
@@ -42,9 +50,10 @@ def date_on_week(today=None,
         today (date): текущая дата
         week (int): номер недели, где 1 - текущая, 2 следующая
 
-    Returns:
+    Returnws:
         tuple: список дат с понедельника по воскресенье
     """
+    logger.debug(f"TODAY: {today}")
     if today is None:
         TODAY = date.today()
     else:
@@ -72,6 +81,7 @@ def date_on_week(today=None,
          5,
          6]
     FIRST_DAY = TODAY - timedelta(days=a.index(WEEKDAY))
+    logger.debug(f"FIRST_DAY: {FIRST_DAY}")
     result = []
     if WEEK == 1:
         for day in range(7):
