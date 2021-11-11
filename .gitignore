@@ -139,3 +139,4 @@ chromedriver
 /log
 /database.db
 ngrok.exe
+win_cron.tab
