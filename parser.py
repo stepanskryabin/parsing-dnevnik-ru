@@ -301,7 +301,7 @@ def main(url: str) -> bool:
     browser.find_element_by_name('password').clear()
     browser.find_element_by_name('password').send_keys(USER.get('password'))
     browser.find_element_by_xpath("//input[@type='submit'][@data-test-id='login-button']").click()
-    browser.get("https://dnevnik.ru/")
+    browser.get(DNEVNIK_RU.get('base_url'))
     logger.debug("Переход в ЛК")
     # Переходим на страницу школьных расписаний с актуальным годом
     browser.get(''.join([f'{DNEVNIK_RU.get("schedules_url")}',
