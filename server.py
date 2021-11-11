@@ -57,16 +57,16 @@ def schedules(name, page_id):
     row_list = []
     for item in WEEK_LIST:
         dbquery = db.get_timetable_by_classes(name=name,
-                                              date=str(item.date))
-        #logger.debug(f"DBQUERY: {list(dbquery)}")
+                                              date=item.str_date)
+        logger.debug(f"DBQUERY: {list(dbquery)}")
         for element in dbquery:
             row = element.lesson_number
             row_list.append(row)
         query_list.append(dbquery)
     query_list = tuple(query_list)
-    #logger.debug(f"Timetable: {list(query_list)}")
+    logger.debug(f"Timetable: {list(query_list)}")
     row_list = set(row_list)
-    #logger.debug(f"ROW_LIST: {row_list}")
+    logger.debug(f"ROW_LIST: {row_list}")
     col_name = ("Урок", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС")
     week = ({"start": str(WEEK_LIST[0].date),
              "end": str(WEEK_LIST[6].date)},
