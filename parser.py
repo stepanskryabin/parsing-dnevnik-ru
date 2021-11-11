@@ -7,7 +7,6 @@ from selenium import webdriver
 
 from models import dbhandler
 from controller import convtime
-from server import TODAY
 from controller.config import LOGGING
 from controller.config import DNEVNIK_RU
 from controller.config import TRIMESTER
@@ -27,6 +26,8 @@ logging.disable()
 
 
 add_logging(LOGGING.getint('level'))
+
+TODAY = date.today()
 
 db = dbhandler.DBHandler(DB.get('uri'))
 
@@ -60,10 +61,7 @@ def get_lessons(html) -> tuple[namedtuple] | str:
 
     schedules_classes = soup.find('a', class_='blue')
     logger.debug("Найдено имя учебного класса")
-    if schedules_classes is None:
-        return 'Error'
-    else:
-        classes_group_id = schedules_classes.get('href')
+    classes_group_id = schedules_classes.get('href')
     logger.debug(f"Получена ссылка с ID класса: {classes_group_id}")
     dnevnik_id = int(classes_group_id.rsplit(sep='=')[1])
     logger.debug(f"Получен ID класса: {dnevnik_id}")
@@ -290,7 +288,7 @@ def main(url: str) -> bool:
     logger.debug(f"Определяем тип OS: {OS_NAME}")
     # Настраиваем и запускаем браузер
     options = webdriver.ChromeOptions()
-    options.headless = True
+    options.headless = False
     browser = webdriver.Chrome(executable_path=executable,
                                options=options)
     # Выставляем таймаут, чтобы браузер ждал 10 сек
@@ -303,6 +301,7 @@ def main(url: str) -> bool:
     browser.find_element_by_name('password').clear()
     browser.find_element_by_name('password').send_keys(USER.get('password'))
     browser.find_element_by_xpath("//input[@type='submit'][@data-test-id='login-button']").click()
+    browser.get("https://dnevnik.ru/")
     logger.debug("Переход в ЛК")
     # Переходим на страницу школьных расписаний с актуальным годом
     browser.get(''.join([f'{DNEVNIK_RU.get("schedules_url")}',
@@ -321,14 +320,14 @@ def main(url: str) -> bool:
     if schedules == 'Error':
         logger.error("Кортеж с ссылками на расписание пустой")
         return True
-    logger.debug("Кортеж из ссылок на расписание сформирован")
+    logger.debug(f"Кортеж из ссылок на расписание сформирован {schedules}")
     # Обходим кортеж ссылок и получаем html для обработки
     for schedule in schedules:
         browser.get(schedule)
         lessons = get_lessons(browser.page_source)
         if lessons == "Error":
             logger.error("Отсутствует расписание занятий")
-            break
+            continue
         for lesson in lessons:
             status = write_db(lesson)
             logger.debug(f"Попытка записи данных в БД - результат: {status}")
