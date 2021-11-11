@@ -1,7 +1,9 @@
 {% extends "base.html" %}
+
 {% block title %}
   <h4> {{ years }} учебный год</h4>
 {% endblock %}
+
 {% block content %}
   {% for _class in classes %}
     {% if loop.index == 9 %}
@@ -17,6 +19,7 @@
     <a href="/schedules/{{_class}}-1"><button type="{{_class}}-1" class="btn btn-outline-secondary btn-lg">{{_class}}</button></a>
   {% endfor %}
 {% endblock %}
+
 {% block footer %}
   <br>
   <p class="small"><img src={{ url_for("static", filename="img/copyleft.png")}} alt="Copyleft" height=16 weight=16> Stepan Skriabin </p>
