@@ -288,7 +288,7 @@ def main(url: str) -> bool:
     logger.debug(f"Определяем тип OS: {OS_NAME}")
     # Настраиваем и запускаем браузер
     options = webdriver.ChromeOptions()
-    options.headless = False
+    options.headless = True
     browser = webdriver.Chrome(executable_path=executable,
                                options=options)
     # Выставляем таймаут, чтобы браузер ждал 10 сек
