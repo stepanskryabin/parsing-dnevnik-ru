@@ -60,7 +60,7 @@ def schedules(name, page_id):
         dbquery = db.get_timetable_by_classes(name=name,
                                               date=item.str_date)
         for item in dbquery:
-            query_list.append(dbquery)
+            query_list.append(item)
 
     logger.debug(f"Timetable: {list(query_list)}")
 
