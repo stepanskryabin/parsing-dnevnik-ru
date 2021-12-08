@@ -140,3 +140,4 @@ chromedriver
 /database.db
 ngrok.exe
 win_cron.tab
+/.idea
