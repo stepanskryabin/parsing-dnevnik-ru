@@ -57,8 +57,8 @@ def schedules(name, page_id):
     query_list = []
 
     for week in WEEK_LIST:
-        dbquery = db.get_timetable_by_classes(name=name,
-                                              date=week.str_date)
+        dbquery = db.get_timetable_by_classes_and_date(name=name,
+                                                       date=week.str_date)
         for item in dbquery:
             query_list.append(item)
 
