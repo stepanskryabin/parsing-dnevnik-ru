@@ -22,8 +22,7 @@ class Timetable(orm.SQLObject):
     с информацией о номере кабинета и учителе
 
     Args:
-        date ([Date]): дата события в расписании
-        dnevnik_ru_date ([str]): дата как в сервисе dnevnik.ru
+        date ([str]): дата события в расписании
         lesson_number ([int]): порядковый номер урока
         lesson_name ([str]): Имя урока (предмет)
         lesson_room ([int]): место проведения урока (кабинет)

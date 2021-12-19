@@ -5,7 +5,7 @@ from collections import namedtuple
 from bs4 import BeautifulSoup
 from selenium import webdriver
 
-from models import dbhandler
+from db import dbhandler
 from controller import convtime
 from controller.config import LOGGING
 from controller.config import DNEVNIK_RU
@@ -30,6 +30,8 @@ add_logging(LOGGING.getint('level'))
 TODAY = date.today()
 
 db = dbhandler.DBHandler(DB.get('uri'))
+db.delete()
+db.create()
 
 
 def get_lessons(html) -> tuple[namedtuple] | str:
@@ -95,7 +97,7 @@ def get_lessons(html) -> tuple[namedtuple] | str:
     Schedules = namedtuple('Schedules', ["classes_name",
                                          "dnevnik_id",
                                          "date",
-                                         "lesson_number", 
+                                         "lesson_number",
                                          "lesson_name",
                                          "lesson_room",
                                          "lesson_teacher",
@@ -105,22 +107,22 @@ def get_lessons(html) -> tuple[namedtuple] | str:
             for lesson_number in lesson_numbers:
                 lesson_info = item.find('td',
                                         id=f'{schedules_date}_{lesson_number}')
-                #logger.debug(f"LESSON INFO1: {lesson_info}")
+                # logger.debug(f"LESSON INFO1: {lesson_info}")
                 if lesson_info is None:
-                    #logger.debug(f"LESSON INFO2: {lesson_info}")
+                    # logger.debug(f"LESSON INFO2: {lesson_info}")
                     continue
                 else:
                     all_div = lesson_info.find_all('div')
-                    #logger.debug(f"ALL DIV: {all_div}")
+                    # logger.debug(f"ALL DIV: {all_div}")
                     for div in all_div:
                         div_class = div.get('class')
                         if div_class == ['popup', 'shadow']:
-                            #logger.debug(f"DIV GET1: {div_class}")
+                            # logger.debug(f"DIV GET1: {div_class}")
                             continue
                         elif div_class == ["dL"]:
-                            #logger.debug(f"DIV GET2: {div_class}")
+                            # logger.debug(f"DIV GET2: {div_class}")
                             lesson_name = div.find('a', class_='aL').get('title')
-                            #logger.debug(f"LESSON NAME1: {lesson_name}")
+                            # logger.debug(f"LESSON NAME1: {lesson_name}")
                             first_p = div.p
                             _ = first_p.get('title')
                             second_p = first_p.find_next('p')
@@ -130,7 +132,7 @@ def get_lessons(html) -> tuple[namedtuple] | str:
                             fourth_p = third_p.find_next('p')
                             lesson_room: str = fourth_p.text
                         elif div_class == ["dLE"]:
-                            #logger.debug(f"DIV GET3: {div_class}")
+                            # logger.debug(f"DIV GET3: {div_class}")
                             lesson_name = None
                             lesson_room = None
                             lesson_teacher = None
@@ -193,20 +195,20 @@ def get_classes(html) -> tuple[namedtuple]:
         logger.error("Информация о классах не найдена")
     else:
         first_li = ul.find_all('li')
-        for item in first_li:
-            second_li = item.find_all('li')
-            for item in second_li:
-                url = item.find('a').get('href')
+        for first_item in first_li:
+            second_li = first_item.find_all('li')
+            for second_item in second_li:
+                url = second_item.find('a').get('href')
                 if url is None:
                     class_name = None
                     class_id = None
                     logger.error('Ссылка на учебный класс не найдена')
                 else:
-                    # разделяем сылку посредством разделителя "=" на список
+                    # разделяем ссылку посредством разделителя "=" на список
                     # содержащий три объекта, где последний объект
                     # ID учебного класса
                     class_id = url.rsplit(sep="=")[2]
-                    class_name = item.a.text
+                    class_name = second_item.a.text
                     result = Classes(class_name=class_name,
                                      url=url,
                                      class_id=class_id)
@@ -220,20 +222,20 @@ def get_schedules(tuple_of_classes: tuple[namedtuple],
                   start_month: int,
                   start_day: int,
                   deep_day: int) -> set | str:
-    """Функция генерирует кортеж с ссылками на расписание
+    """Функция генерирует кортеж ссылок на расписание
     уроков от заданной даты и на заданную глубину
 
     Args:
         tuple_of_classes (tuple[namedtuple]): кортеж содержащий именованный
         кортеж (имя учебного класса, ссылку на его расписание и ID).
-        Используется только второй элемент именованого кортежа.
+        Используется только второй элемент именованного кортежа.
         start_year (int): год начала загрузки расписания
         start_month (int): месяц начала загрузки расписания
         start_day (int): день начала загрузки расписания
         deep_day (int): глубина (дни) на которую загружается расписание
 
     Returns:
-        tuple: кортеж с ссылками на расписание для всех классов
+        tuple: кортеж ссылок на расписание для всех классов
     """
 
     def get_trimester(request_date) -> int:
@@ -244,36 +246,35 @@ def get_schedules(tuple_of_classes: tuple[namedtuple],
         second_trimester = date.fromisoformat(TRIMESTER.get('second'))
         third_trimester = date.fromisoformat(TRIMESTER.get('third'))
         if request_date <= first_trimester:
-            result = number_of_trimester[0]
+            return number_of_trimester[0]
         elif first_trimester < request_date <= second_trimester:
-            result = number_of_trimester[1]
+            return number_of_trimester[1]
         elif second_trimester < request_date <= third_trimester:
-            result = number_of_trimester[2]
+            return number_of_trimester[2]
         else:
             logger.error(' '.join("Ошибка в определении триместра.",
                                   "Использован номер первого триместра"))
-            result = number_of_trimester[1]
-        return result
+            return number_of_trimester[1]
 
-    date_filtred = convtime.filtred_by_week(start_year,
-                                            start_month,
-                                            start_day,
-                                            deep_day)
+    date_filtered = convtime.filtred_by_week(start_year,
+                                             start_month,
+                                             start_day,
+                                             deep_day)
 
     result = []
     if tuple_of_classes is None:
         return 'Error'
     else:
         for item in tuple_of_classes:
-        # в кортеже list_of_classes находится вложенный именованый
-        # кортеж из трёх элементов: название учебного класса,
-        # сылка на расписание, ID в системе dnevnikru
-            for d in date_filtred:
+            # в кортеже list_of_classes находится вложенный именованный
+            # кортеж из трёх элементов: название учебного класса,
+            # cсылка на расписание, ID в системе dnevnikru
+            for d in date_filtered:
                 schedules = ''.join([f'{item.url}',
-                                 f'&period={get_trimester(d)}',
-                                 f'&year={d.year}',
-                                 f'&month={d.month}',
-                                 f'&day={d.day}'])
+                                     f'&period={get_trimester(d)}',
+                                     f'&year={d.year}',
+                                     f'&month={d.month}',
+                                     f'&day={d.day}'])
                 result.append(schedules)
         logger.debug(f"Список ссылок на расписание: {tuple_of_classes}")
         return set(result)
@@ -291,7 +292,7 @@ def main(url: str) -> bool:
     options.headless = True
     browser = webdriver.Chrome(executable_path=executable,
                                options=options)
-    # Выставляем таймаут, чтобы браузер ждал 10 сек
+    # Выставляем таймаут ожидания = 10 сек
     # после выполнения каждого действия
     browser.implicitly_wait(10)
     logger.debug('Браузер загрузился')
