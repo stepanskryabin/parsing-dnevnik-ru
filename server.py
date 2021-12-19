@@ -4,7 +4,7 @@ from flask import Flask
 from flask import render_template
 
 from controller import convtime
-from models import dbhandler
+from db import dbhandler
 from controller.config import LOGGING
 from controller.config import DB
 
@@ -26,7 +26,7 @@ db = dbhandler.DBHandler(DB.get("uri"))
 app = Flask(__name__)
 
 TODAY = date.today()
-#TODAY = date(2021, 10, 1)
+# TODAY = date(2021, 10, 1)
 
 
 @app.route("/")
@@ -56,9 +56,9 @@ def schedules(name, page_id):
     logger.debug(f"Список дат дней недели{WEEK_LIST}")
     query_list = []
 
-    for item in WEEK_LIST:
+    for week in WEEK_LIST:
         dbquery = db.get_timetable_by_classes(name=name,
-                                              date=item.str_date)
+                                              date=week.str_date)
         for item in dbquery:
             query_list.append(item)
 
@@ -69,12 +69,12 @@ def schedules(name, page_id):
         str_date.append(week.str_date)
 
     return render_template("schedules.html",
-                             classname=name,
-                             timetables=query_list,
-                             page_id=page_id,
-                             start_date=WEEK_LIST[0].str_date,
-                             stop_date=WEEK_LIST[6].str_date,
-                             week_list=str_date)
+                           classname=name,
+                           timetables=query_list,
+                           page_id=page_id,
+                           start_date=WEEK_LIST[0].str_date,
+                           stop_date=WEEK_LIST[6].str_date,
+                           week_list=str_date)
 
 
 if __name__ == "__main__":
