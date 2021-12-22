@@ -10,6 +10,7 @@ from sqlobject import AND
 
 from db import models
 
+import sqlite3
 
 class DatabaseReadError(SQLObjectNotFound):
     pass
@@ -45,8 +46,8 @@ class DBHandler:
             self._logger = None
             self._loglevel = None
 
-        self.connection = orm.connectionForURI(self._uri)
-        orm.sqlhub.processConnection = self.connection
+        self.connection = sqlite3.connect(database=uri)
+        self._cursor = self.connection.cursor()
         self.path = path_to_models
 
     def __str__(self) -> str:
@@ -65,13 +66,12 @@ class DBHandler:
         return tuple(classes)
 
     def create(self) -> None:
-        # looking for all Classes listed in models.py
-        for item in self.__search_db_in_models():
-            # Create tables in database for each class
-            # that is located in models module
-            class_ = getattr(models, item)
-            class_.createTable(ifNotExists=True,
-                               connection=self.connection)
+        self._cursor.execute('''CREATE TABLE Classes (
+                                    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                                    name TEXT UNIQUE,
+                                    dnevnik_id INTEGER UNIQUE,
+                                    timetable 
+                                    )''')
         return
 
     def delete(self) -> None:
