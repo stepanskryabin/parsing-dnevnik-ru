@@ -1,90 +1,142 @@
 import sqlite3
+from sqlite3 import DatabaseError
+import copy
+from collections import namedtuple
 
 
 class DBHandler:
     def __init__(self,
-                 uri: str = "sqlite:/:memory:") -> None:
+                 uri: str = ":memory:") -> None:
         self.connection = sqlite3.connect(uri)
+        self.cur = self.connection.cursor()
+        sqlite3.paramstyle = "named"
+        sqlite3.threadsafety = 3
+
+    def __del__(self):
+        self.connection.close()
 
     def create_classes(self) -> None:
-        CLASSES = 'CREATE TABLE IF NOT EXISTS Classes (' \
-                  'id INTEGER PRIMARY KEY AUTOINCREMENT,' \
-                  'name TEXT UNIQUE NOT NULL,' \
-                  'dnevnik_id INTEGER UNIQUE NOT NULL);'
+        statement = '''CREATE TABLE IF NOT EXISTS Classes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT UNIQUE NOT NULL,
+                    dnevnik_id INTEGER UNIQUE NOT NULL);'''
         cursor = self.connection.cursor()
-        cursor.execute(CLASSES)
+        cursor.execute(statement)
+        self.connection.commit()
         cursor.close()
 
     def create_timetable(self) -> None:
-        TIMETABLE = 'CREATE TABLE IF NOT EXISTS Timetable (' \
-                    'id INTEGER PRIMARY KEY AUTOINCREMENT,' \
-                    'date TEXT NOT NULL,' \
-                    'lesson_number INTEGER NOT NULL,' \
-                    'lesson_name TEXT NULL,' \
-                    'lesson_room TEXT NULL,' \
-                    'lesson_teacher TEXT NULL,' \
-                    'lesson_time TEXT NULL,' \
-                    'classes_id INTEGER,' \
-                    'FOREIGN KEY (classes_id) REFERENCES Classes (id));'
+        statement = '''CREATE TABLE IF NOT EXISTS Timetable (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    date TEXT NOT NULL,
+                    lesson_number INTEGER NOT NULL,
+                    lesson_name TEXT NULL,
+                    lesson_room TEXT NULL,
+                    lesson_teacher TEXT NULL,
+                    lesson_time TEXT NULL,
+                    classes_id INTEGER,
+                    FOREIGN KEY (classes_id) REFERENCES Classes (id));'''
         cursor = self.connection.cursor()
-        cursor.execute(TIMETABLE)
+        cursor.execute(statement)
+        self.connection.commit()
         cursor.close()
 
     def delete_all(self) -> None:
         cursor = self.connection.cursor()
         cursor.execute('DROP TABLE IF EXISTS Classes;')
         cursor.execute('DROP TABLE IF EXISTS Timetable;')
+        self.connection.commit()
         cursor.close()
 
-    def add_new_class(self,
-                      name: str,
-                      dnevnik_id: int) -> str:
+    def get_classes(self,
+                    name: str,
+                    dnevnik_id: int) -> tuple:
         cursor = self.connection.cursor()
-        CLASSES = 'SELECT id' \
-                  'FROM Classes' \
-                  f'WHERE name = {name}' \
-                  f'AND dnevnik_id = {dnevnik_id};'
-        dbquery = cursor.execute(CLASSES)
+        statement = '''SELECT *
+                    FROM Classes
+                    WHERE name = :name
+                    AND dnevnik_id = :dnevnik_id;'''
+        dbquery = cursor.execute(statement, {"dnevnik_id": dnevnik_id,
+                                             "name": name})
+        return copy.deepcopy(dbquery.fetchone())
 
-        if dbquery is None:
-            NEWCLASSES = 'INSERT INTO Classes (' \
-                         'name,' \
-                         'dnevnik_ru)' \
-                         f'VALUES ({name}, {dnevnik_id});'
-            cursor.execute(NEWCLASSES)
-            message = 'Added new Classes'
+    def add_classes(self,
+                    name: str,
+                    dnevnik_id: int) -> str:
+        cursor = self.connection.cursor()
+        statement = '''INSERT INTO Classes (
+                    name,
+                    dnevnik_id)
+                    VALUES (:name, :dnevnik_id);'''
+        try:
+            cursor.execute(statement, {"dnevnik_id": dnevnik_id,
+                                       "name": name})
+        except DatabaseError as err:
+            return f'Error {str(err)}'
         else:
-            message = 'Classes already added'
-        cursor.close()
-        return message
+            self.connection.commit()
+            cursor.close()
+            return 'Ok'
 
-    def add_new_timetable(self,
-                          name: str,
-                          dnevnik_id: int,
-                          date: str,
-                          lesson_number: int,
-                          lesson_name: str,
-                          lesson_room: str,
-                          lesson_teacher: str,
-                          lesson_time: str) -> None:
+    def get_timetable(self,
+                      name: str,
+                      dnevnik_id: int,
+                      date: str,
+                      lesson_number: int) -> tuple:
         cursor = self.connection.cursor()
-        LINKCLASSES = 'SELECT id' \
-                      'FROM Classes' \
-                      f'WHERE name = {name}' \
-                      f'AND dnevnik_id = {dnevnik_id};'
-        NEWTIMETABLE = "INSERT INTO Timetable (" \
-                       "date," \
-                       "lesson_number," \
-                       "lesson_name," \
-                       "lesson_room," \
-                       "lesson_teacher," \
-                       "lesson_time," \
-                       "classes_id)" \
-                       f"VALUES ({date}, {lesson_number}, {lesson_name}," \
-                       f"{lesson_room}, {lesson_teacher}, {lesson_time}," \
-                       f"{LINKCLASSES});"
-        cursor.execute(NEWTIMETABLE)
+        statement = '''SELECT *
+                    FROM Timetable
+                    WHERE date = :date
+                    AND lesson_number = :lesson_number
+                    AND classes_id IN (SELECT id FROM Classes
+                                      WHERE name = :name
+                                      AND dnevnik_id = :dnevnik_id);'''
+        dbquery = cursor.execute(statement, {"name": name,
+                                             "dnevnik_id": dnevnik_id,
+                                             "date": date,
+                                             "lesson_number": lesson_number})
+        result = tuple(copy.deepcopy(dbquery.fetchall()))
         cursor.close()
+        return result
+
+    def add_timetable(self,
+                      name: str,
+                      dnevnik_id: int,
+                      date: str,
+                      lesson_number: int,
+                      lesson_name: str,
+                      lesson_room: str,
+                      lesson_teacher: str,
+                      lesson_time: str) -> str:
+        cursor = self.connection.cursor()
+        statement = '''INSERT INTO Timetable (
+                    date,
+                    lesson_number,
+                    lesson_name,
+                    lesson_room,
+                    lesson_teacher,
+                    lesson_time,
+                    classes_id)
+                    VALUES (:date, :lesson_number, :lesson_name,
+                    :lesson_room, :lesson_teacher, :lesson_time,
+                    (SELECT id FROM Classes
+                    WHERE name = :name
+                    AND dnevnik_id = :dnevnik_id));'''
+        try:
+            cursor.execute(statement, {"date": date,
+                                       "lesson_number": lesson_number,
+                                       "lesson_name": lesson_name,
+                                       "lesson_room": lesson_room,
+                                       "lesson_teacher": lesson_teacher,
+                                       "lesson_time": lesson_time,
+                                       "name": name,
+                                       "dnevnik_id": dnevnik_id})
+        except DatabaseError as err:
+            return f'Error {str(err)}'
+        else:
+            self.connection.commit()
+            cursor.close()
+            return 'Ok'
 
     def update_timetable(self,
                          name: str,
@@ -96,29 +148,55 @@ class DBHandler:
                          lesson_teacher: str = None,
                          lesson_time: str = None) -> None:
         cursor = self.connection.cursor()
-        NEWTIMETABLE = 'UPDATE Timetable' \
-                       f'SET date = {date},' \
-                       f'lesson_number = {lesson_number},' \
-                       f'lesson_name = {lesson_name},' \
-                       f'lesson_room = {lesson_room},' \
-                       f'lesson_teacher = {lesson_teacher},' \
-                       f'lesson_time = {lesson_time}' \
-                       'WHERE classes_id IN (SELECT id FROM Classes' \
-                       f'WHERE name = {name}' \
-                       f'AND dnevnik_id = {dnevnik_id});'
-        cursor.execute(NEWTIMETABLE)
+        statement = '''UPDATE Timetable
+                    SET date = :date,
+                    lesson_number = :lesson_number,
+                    lesson_name = :lesson_name,
+                    lesson_room = :lesson_room,
+                    lesson_teacher = :lesson_teacher,
+                    lesson_time = :lesson_time
+                    WHERE classes_id IN (SELECT id FROM Classes
+                    WHERE name = :name
+                    AND dnevnik_id = :dnevnik_id);'''
+        cursor.execute(statement, {"date": date,
+                                   "lesson_number": lesson_number,
+                                   "lesson_name": lesson_name,
+                                   "lesson_room": lesson_room,
+                                   "lesson_teacher": lesson_teacher,
+                                   "lesson_time": lesson_time,
+                                   "name": name,
+                                   "dnevnik_id": dnevnik_id})
+        self.connection.commit()
         cursor.close()
 
     def get_timetable_by_classes_and_date(self,
                                           name: str,
-                                          date: str) -> list:
+                                          date: str) -> tuple:
+        Timetable = namedtuple('Timetable', ["id",
+                                             "date",
+                                             "lesson_number",
+                                             "lesson_name",
+                                             "lesson_room",
+                                             "lesson_teacher",
+                                             "lesson_time"])
+        result = []
         cursor = self.connection.cursor()
-        QUERY = 'SELECT *' \
-                'FROM Timetable' \
-                f'WHERE date = {date}' \
-                'AND classes_id IN (SELECT id FROM Classes' \
-                f'WHERE name = {name});'
-        dbquery = cursor.execute(QUERY)
-        result = dbquery.fetchall()
+        statement = '''SELECT *
+                    FROM Timetable
+                    WHERE date = :date
+                    AND classes_id IN (SELECT id FROM Classes
+                    WHERE name = :name);'''
+        dbquery = cursor.execute(statement, {"date": date,
+                                             "name": name})
+        all_row = tuple(copy.deepcopy(dbquery.fetchall()))
+        for row in all_row:
+            result.append(Timetable(id=row[0],
+                                    date=row[1],
+                                    lesson_number=row[2],
+                                    lesson_name=row[3],
+                                    lesson_room=row[4],
+                                    lesson_teacher=row[5],
+                                    lesson_time=row[6]))
+        self.connection.commit()
         cursor.close()
-        return result
+        return tuple(result)
