@@ -20,13 +20,10 @@ logging.disable()
 # loguru logger on
 add_logging(LOGGING.getint("level"))
 
-# Подключаемся к БД
-db = dbhandler.DBHandler(DB.get("uri"))
-
 app = Flask(__name__)
 
-TODAY = date.today()
-# TODAY = date(2021, 10, 1)
+# TODAY = date.today()
+TODAY = date.fromisoformat("2021-11-12")
 
 
 @app.route("/")
@@ -51,7 +48,7 @@ def home():
 
 @app.route('/schedules/<name>-<int:page_id>')
 def schedules(name, page_id):
-
+    db = dbhandler.DBHandler(DB.get("uri"))
     WEEK_LIST = convtime.date_on_week(TODAY, page_id)
     logger.debug(f"Список дат дней недели{WEEK_LIST}")
     query_list = []
