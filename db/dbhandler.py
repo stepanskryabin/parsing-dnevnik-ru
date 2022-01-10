@@ -1,6 +1,6 @@
+import copy
 import sqlite3
 from sqlite3 import DatabaseError
-import copy
 from collections import namedtuple
 
 
@@ -8,9 +8,16 @@ class DBHandler:
     def __init__(self,
                  uri: str = ":memory:") -> None:
         self.connection = sqlite3.connect(uri)
+        self._uri = uri
         self.cur = self.connection.cursor()
-        sqlite3.paramstyle = "named"
+        self._paramstyle = sqlite3.paramstyle = "named"
         sqlite3.threadsafety = 3
+
+    def __str__(self) -> str:
+        return f"Connected to database in {self._uri}"
+
+    def __repr__(self) -> str:
+        return f"class DBHandler: paramstyle={self._paramstyle}"
 
     def __del__(self):
         self.connection.close()
@@ -58,7 +65,7 @@ class DBHandler:
                     AND dnevnik_id = :dnevnik_id;'''
         dbquery = cursor.execute(statement, {"dnevnik_id": dnevnik_id,
                                              "name": name})
-        return copy.deepcopy(dbquery.fetchone())
+        return tuple(copy.deepcopy(dbquery.fetchall()))
 
     def add_classes(self,
                     name: str,
@@ -137,37 +144,6 @@ class DBHandler:
             self.connection.commit()
             cursor.close()
             return 'Ok'
-
-    def update_timetable(self,
-                         name: str,
-                         dnevnik_id: int,
-                         date: str,
-                         lesson_number: int,
-                         lesson_name: str = None,
-                         lesson_room: str = None,
-                         lesson_teacher: str = None,
-                         lesson_time: str = None) -> None:
-        cursor = self.connection.cursor()
-        statement = '''UPDATE Timetable
-                    SET date = :date,
-                    lesson_number = :lesson_number,
-                    lesson_name = :lesson_name,
-                    lesson_room = :lesson_room,
-                    lesson_teacher = :lesson_teacher,
-                    lesson_time = :lesson_time
-                    WHERE classes_id IN (SELECT id FROM Classes
-                    WHERE name = :name
-                    AND dnevnik_id = :dnevnik_id);'''
-        cursor.execute(statement, {"date": date,
-                                   "lesson_number": lesson_number,
-                                   "lesson_name": lesson_name,
-                                   "lesson_room": lesson_room,
-                                   "lesson_teacher": lesson_teacher,
-                                   "lesson_time": lesson_time,
-                                   "name": name,
-                                   "dnevnik_id": dnevnik_id})
-        self.connection.commit()
-        cursor.close()
 
     def get_timetable_by_classes_and_date(self,
                                           name: str,
