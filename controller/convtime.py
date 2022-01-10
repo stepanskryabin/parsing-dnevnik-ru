@@ -5,8 +5,8 @@ from datetime import timedelta, date
 def filtred_by_week(year: int,
                     month: int,
                     day: int,
-                    deep_day: int) -> tuple:
-    """Функция выдаёт список двух дат принадлежащих разным неделям
+                    deep_day: int) -> set:
+    """Выводит список двух дат принадлежащих разным неделям
 
     Args:
         year (int): год начала
@@ -30,25 +30,26 @@ def filtred_by_week(year: int,
         else:
             d = new_week
         result.append(d)
-    return tuple(result)
+    return set(result)
 
 
 def date_on_week(today=None,
-                 week=None) -> tuple:
-    """Функция выводит список дат с понедельника по воскресенье
+                 week: int = None) -> tuple:
+    """Выводит список дат с понедельника по воскресенье
     используя для этого только текущую дату
 
     Args:
         today (date): текущая дата
         week (int): номер недели, где 1 - текущая, 2 следующая
 
-    Returnws:
+    Returns:
         tuple: список дат с понедельника по воскресенье
     """
     if today is None:
         TODAY = date.today()
     else:
         TODAY = today
+
     if week is None:
         WEEK = 1
     else:
@@ -56,13 +57,13 @@ def date_on_week(today=None,
     Date = namedtuple("Date", ["name",
                                "date",
                                "str_date"])
-    WEEKDAY_NAME= ("ПН",
-                   "ВТ",
-                   "СР",
-                   "ЧТ",
-                   "ПТ",
-                   "СБ",
-                   "ВС")
+    WEEKDAY_NAME = ("ПН",
+                    "ВТ",
+                    "СР",
+                    "ЧТ",
+                    "ПТ",
+                    "СБ",
+                    "ВС")
     WEEKDAY = date.weekday(TODAY)
     a = [0,
          1,
