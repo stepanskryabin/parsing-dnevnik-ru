@@ -5,7 +5,7 @@ from loguru import logger
 from controller.config import LOGGING
 
 
-def add_logging(debug_status: int) -> None:
+def add_logging(debug_status: int = 20) -> None:
     """Enables logging depending on start parameter uvicorn
     Instead of print we use:                       #
                logger.debug('debug message')       #

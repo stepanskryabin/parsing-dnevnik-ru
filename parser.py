@@ -28,10 +28,12 @@ logging.disable()
 add_logging(LOGGING.getint('level'))
 
 TODAY = date.today()
+# TODAY = date.fromisoformat("2021-11-12")
 
 db = dbhandler.DBHandler(DB.get('uri'))
-db.delete()
-db.create()
+db.delete_all()
+db.create_classes()
+db.create_timetable()
 
 
 def get_lessons(html) -> tuple[namedtuple] | str:
@@ -158,19 +160,21 @@ def write_db(lesson: tuple[namedtuple]) -> str:
         lesson (tuple[namedtuple]): [description]
     """
     logger.debug(f'Кортеж для записи: {lesson}')
-    try:
-        db.add_new_timetable(name=lesson.classes_name,
-                             dnevnik_id=lesson.dnevnik_id,
-                             date=lesson.date,
-                             lesson_number=lesson.lesson_number,
-                             lesson_name=lesson.lesson_name,
-                             lesson_room=lesson.lesson_room,
-                             lesson_teacher=lesson.lesson_teacher,
-                             lesson_time=lesson.lesson_time)
-        return "Ok"
-    except Exception as ERROR:
-        logger.exception(f"Запись в БД неудачна: {ERROR}")
-        return "Error"
+    dbquery1 = db.add_classes(name=lesson.classes_name,
+                              dnevnik_id=lesson.dnevnik_id)
+
+    dbquery2 = db.add_timetable(name=lesson.classes_name,
+                                dnevnik_id=lesson.dnevnik_id,
+                                date=lesson.date,
+                                lesson_number=lesson.lesson_number,
+                                lesson_name=lesson.lesson_name,
+                                lesson_room=lesson.lesson_room,
+                                lesson_teacher=lesson.lesson_teacher,
+                                lesson_time=lesson.lesson_time)
+    if dbquery1 and dbquery2 == 'Ok':
+        return 'Ok'
+    else:
+        return f'Error #1{dbquery1}, #2{dbquery2}'
 
 
 def get_classes(html) -> tuple[namedtuple]:
@@ -306,8 +310,7 @@ def main(url: str) -> bool:
     logger.debug("Переход в ЛК")
     # Переходим на страницу школьных расписаний с актуальным годом
     browser.get(''.join([f'{DNEVNIK_RU.get("schedules_url")}',
-                         f'?school={PARAMETERS.get("school")}',
-                         f'&tab=groups&year={TODAY.year}']))
+                         f'?school={PARAMETERS.get("school")}']))
     logger.debug("Переход на страницу с расписаниями")
     # Парсим ссылки на все классы
     tuple_of_classes = get_classes(browser.page_source)
