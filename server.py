@@ -22,8 +22,8 @@ add_logging(LOGGING.getint("level"))
 
 app = Flask(__name__)
 
-# TODAY = date.today()
-TODAY = date.fromisoformat("2021-11-12")
+TODAY = date.today()
+# TODAY = date.fromisoformat("2021-11-12")
 
 
 @app.route("/")
