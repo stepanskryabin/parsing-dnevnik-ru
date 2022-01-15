@@ -9,11 +9,13 @@ from db import dbhandler
 from controller import convtime
 from controller.config import LOGGING
 from controller.config import DNEVNIK_RU
-from controller.config import TRIMESTER
 from controller.config import OTHER
 from controller.config import PARAMETERS
 from controller.config import USER
 from controller.config import DB
+from controller.convtime import convert_to_isodate
+from controller.convtime import get_trimester
+from controller.convtime import filtred_by_week
 
 
 # ************** Logging beginning *******************
@@ -47,23 +49,10 @@ def get_lessons(html) -> tuple[namedtuple] | str:
     Returns:
         [tuple]: кортеж с вложенными именованными кортежами
     """
-    def convert_to_isodate(string: str) -> str:
-        """Функция конвертирует найденный ID в дату
-        в ISO-формате
-
-        Args:
-            string (str): строка содержащая дату, например 'd20201101'
-
-        Returns:
-            [str]: возвращает дату в формате ISO, например '2020-11-01'
-        """
-        var: str = string.lstrip('d')
-        result = date(int(var[0:4]), int(var[4:6]), int(var[6:8]))
-        return result.isoformat()
 
     soup = BeautifulSoup(html, 'lxml')
 
-    schedules_classes = soup.find('a', class_='blue')
+    schedules_classes = soup.find('a', attrs={"class": "blue"})
     logger.debug("Найдено имя учебного класса")
     classes_group_id = schedules_classes.get('href')
     logger.debug(f"Получена ссылка с ID класса: {classes_group_id}")
@@ -139,6 +128,7 @@ def get_lessons(html) -> tuple[namedtuple] | str:
                             lesson_room = ""
                             lesson_teacher = ""
                             lesson_time = ""
+
                         result = Schedules(classes_name=schedules_classes.text,
                                            dnevnik_id=dnevnik_id,
                                            date=convert_to_isodate(schedules_date),
@@ -154,10 +144,16 @@ def get_lessons(html) -> tuple[namedtuple] | str:
 
 
 def write_db(lesson: tuple[namedtuple]) -> str:
-    """Функция записи данных в БД.
+    """Записывает в БД информацию о расписании.
 
     Args:
         lesson (tuple[namedtuple]): [description]
+
+    Returns:
+        'Ok' - если запись прошла успешна
+        'Error #1 {}, #2 {}' - ошибки записи, где #1 статус записи информации
+            в таблицу "Classes", #2 статус записи в таблицу "Timetables"
+
     """
     logger.debug(f'Кортеж для записи: {lesson}')
     dbquery1 = db.add_classes(name=lesson.classes_name,
@@ -241,29 +237,10 @@ def get_schedules(tuple_of_classes: tuple[namedtuple],
     Returns:
         tuple: кортеж ссылок на расписание для всех классов
     """
-
-    def get_trimester(request_date) -> int:
-        number_of_trimester = (DNEVNIK_RU.getint('1trimester'),
-                               DNEVNIK_RU.getint('2trimester'),
-                               DNEVNIK_RU.getint('3trimester'))
-        first_trimester = date.fromisoformat(TRIMESTER.get('first'))
-        second_trimester = date.fromisoformat(TRIMESTER.get('second'))
-        third_trimester = date.fromisoformat(TRIMESTER.get('third'))
-        if request_date <= first_trimester:
-            return number_of_trimester[0]
-        elif first_trimester < request_date <= second_trimester:
-            return number_of_trimester[1]
-        elif second_trimester < request_date <= third_trimester:
-            return number_of_trimester[2]
-        else:
-            logger.error(' '.join("Ошибка в определении триместра.",
-                                  "Использован номер первого триместра"))
-            return number_of_trimester[1]
-
-    date_filtered = convtime.filtred_by_week(start_year,
-                                             start_month,
-                                             start_day,
-                                             deep_day)
+    date_filtered = filtred_by_week(start_year,
+                                    start_month,
+                                    start_day,
+                                    deep_day)
 
     result = []
     if tuple_of_classes is None:
