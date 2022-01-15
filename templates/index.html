@@ -1,26 +1,71 @@
-{% extends "base.html" %}
-
-{% block title %}
-  <h4> {{ years }} учебный год</h4>
-{% endblock %}
-
-{% block content %}
-  {% for _class in classes %}
-    {% if loop.index == 9 %}
-      <br>
-      <br>
-    {% elif loop.index == 17 %}
-      <br>
-      <br>
-    {% elif loop.index == 25 %}
-      <br>
-      <br>
-    {% endif %}
-    <a href="/schedules/{{_class}}-1"><button type="{{_class}}-1" class="btn btn-outline-secondary btn-lg">{{_class}}</button></a>
-  {% endfor %}
-{% endblock %}
-
-{% block footer %}
-  <br>
-  <p class="small"><img src={{ url_for("static", filename="img/copyleft.png")}} alt="Copyleft" height=16 weight=16> Stepan Skriabin </p>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <link rel="apple-touch-icon" sizes="180x180" href={{ url_for("static", filename="icon/calendar.png") }}>
+  <link rel="icon" type="image/png" sizes="32x32" href={{ url_for("static", filename="icon/favicon-32x32.png") }}>
+  <link rel="icon" type="image/png" sizes="16x16" href={{ url_for("static", filename="icon/favicon-16x16.png") }}>
+  <link rel="manifest" href={{ url_for("static", filename="icon/site.webmanifest") }}>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href={{ url_for("static", filename="css/bootstrap.min.css") }}>
+  <script src={{ url_for("static", filename="js/bootstrap.min.js") }}></script>
+  <title>Расписание</title>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row justify-content-center" id="menu">
+      <div class="col">
+        <div class="container">
+          <br>
+          {% block menu %}
+          {% endblock %}
+          <br>
+        </div>
+      </div>
+      <div class="col">
+        <div class="container">
+          <br>
+          <h4> {{ years }} учебный год</h4>
+          <br>
+        </div>
+      </div>
+      <div class="col">
+      </div>
+    </div>
+    <div class="row justify-content-center" id="content">
+      <div class="col-xl-1">
+      </div>
+      <div class="col-xl-12">
+        <div class="container">
+          {% for _class in classes %}
+            {% if loop.index == 9 %}
+            <br>
+            <br>
+            {% elif loop.index == 17 %}
+            <br>
+            <br>
+            {% elif loop.index == 25 %}
+            <br>
+            <br>
+            {% endif %}
+            <a href="/schedules/{{_class}}-1"><button type="{{_class}}-1" class="btn btn-outline-secondary btn-lg">{{_class}}</button></a>
+          {% endfor %}
+        </div>
+      </div>
+        <div class="col-xl-1">
+        </div>
+    </div>
+      <div class="row justify-content-center" id="footer">
+        <div class="col">
+        </div>
+      <div class="col">
+        <br>
+        <p class="small">
+          <img src={{ url_for("static", filename="img/copyleft.png")}} width="16" height="16" alt="Copyleft"> Stepan Skriabin
+        </p>
+      </div>
+        <div class="col">
+        </div>
+    </div>
+  </div>
+</body>
+</html>
