@@ -11,59 +11,53 @@
   <title>Расписание</title>
 </head>
 <body>
-  <div class="container-fluid">
-    <div class="row justify-content-center" id="menu">
-      <div class="col">
-        <div class="container">
-          <br>
-          {% block menu %}
-          {% endblock %}
-          <br>
-        </div>
+  <div class="container">
+    <div class="row" id="menu">
+      <div class="col-3">
+        <br>
+        <br>
       </div>
-      <div class="col">
-        <div class="container">
-          <br>
-          <h4> {{ years }} учебный год</h4>
-          <br>
-        </div>
-      </div>
-      <div class="col">
-      </div>
-    </div>
-    <div class="row justify-content-center" id="content">
-      <div class="col-xl-1">
-      </div>
-      <div class="col-xl-12">
-        <div class="container">
-          {% for _class in classes %}
-            {% if loop.index == 9 %}
-            <br>
-            <br>
-            {% elif loop.index == 17 %}
-            <br>
-            <br>
-            {% elif loop.index == 25 %}
-            <br>
-            <br>
-            {% endif %}
-            <a href="/schedules/{{_class}}-1"><button type="{{_class}}-1" class="btn btn-outline-secondary btn-lg">{{_class}}</button></a>
-          {% endfor %}
-        </div>
-      </div>
-        <div class="col-xl-1">
-        </div>
-    </div>
-      <div class="row justify-content-center" id="footer">
-        <div class="col">
-        </div>
       <div class="col">
         <br>
-        <p class="small">
-          <img src={{ url_for("static", filename="img/copyleft.png")}} width="16" height="16" alt="Copyleft"> Stepan Skriabin
-        </p>
+        <p class="display-6"> {{ years }} учебный год</p>
+        <br>
       </div>
+      <div class="col-1">
+        <br>
+        <br>
+      </div>
+    </div>
+    <div class="row" id="content">
+      <div class="col-lg-1">
+      </div>
+      <div class="col-lg-10">
+        {% for _class in classes %}
+          {% if loop.index == 9 %}
+            <br>
+            <br>
+          {% elif loop.index == 17 %}
+            <br>
+            <br>
+          {% elif loop.index == 25 %}
+            <br>
+            <br>
+          {% endif %}
+            <a href="/schedules/{{_class}}-1"><button type="{{_class}}-1" class="btn btn-outline-secondary btn-lg">{{_class}}</button></a>
+        {% endfor %}
+      </div>
+        <div class="col-lg-1">
+        </div>
+    </div>
+      <div class="row" id="footer">
         <div class="col">
+        </div>
+        <div class="col">
+        </div>
+        <div class="col">
+          <br>
+          <p class="small">
+            <img src={{ url_for("static", filename="img/copyleft.png")}} width="16" height="16" alt="Copyleft"> Stepan Skriabin
+          </p>
         </div>
     </div>
   </div>
