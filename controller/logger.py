@@ -1,16 +1,11 @@
 import sys
-import configparser
 
 from loguru import logger
 
-# ************** Read "config.ini" ********************
-config = configparser.ConfigParser()
-config.read('config.ini')
-logging = config['LOGGING']
-# ************** END **********************************
+from controller.config import LOGGING
 
 
-def add_logging(debug_status: int) -> None:
+def add_logging(debug_status: int = 20) -> None:
     """Enables logging depending on start parameter uvicorn
     Instead of print we use:                       #
                logger.debug('debug message')       #
@@ -41,14 +36,14 @@ def add_logging(debug_status: int) -> None:
     if DEBUG:
         # We connect the output to TTY, level DEBUG
         logger.add(sys.stdout,
-                   format=logging.get("debug"),
+                   format=LOGGING.get("debug"),
                    level="DEBUG",
                    enqueue=True,
                    colorize=True)
 
         # Connect the output to a file, level DEBUG
         logger.add('log/debug.log',
-                   format=logging.get("debug"),
+                   format=LOGGING.get("debug"),
                    level="DEBUG",
                    enqueue=True,
                    colorize=True,
@@ -58,14 +53,14 @@ def add_logging(debug_status: int) -> None:
     else:
         # We connect the output to TTY, level INFO
         logger.add(sys.stdout,
-                   format=logging.get("info"),
+                   format=LOGGING.get("info"),
                    level="INFO",
                    enqueue=True,
                    colorize=True)
 
     # We connect the output to a file, level ERROR
     logger.add('log/error.log',
-               format=logging.get("error"),
+               format=LOGGING.get("error"),
                level="ERROR",
                backtrace=True,
                diagnose=True,
