@@ -4,13 +4,9 @@ from flask import Flask
 from flask import render_template
 
 from controller import convtime
-<<<<<<< HEAD
 from db import dbhandler
 from controller.config import LOGGING
 from controller.config import DB
-=======
-from models import dbhandler
->>>>>>> main
 
 # ************** Logging beginning *******************
 from loguru import logger
@@ -22,34 +18,14 @@ import logging
 logging.disable()
 # ************** Logging end *************************
 
-<<<<<<< HEAD
 
 # loguru logger on
 add_logging(LOGGING.getint("level"))
-=======
-# ****************************************************
-config = configparser.ConfigParser()
-config.read("config.ini")
-DB = config['DATABASE']
-LOG = config['LOGGING']
-PARAMETERS = config["PARAMETERS"]
-# ****************************************************
-
-# loguru logger on
-add_logging(LOG.getint("level"))
-
-# Подключаемся к БД
-db = dbhandler.DBHandler(DB.get("uri"))
->>>>>>> main
 
 app = Flask(__name__)
 
 TODAY = date.today()
-<<<<<<< HEAD
 # TODAY = date.fromisoformat("2021-11-12")
-=======
-#TODAY = date(2021, 10, 1)
->>>>>>> main
 
 
 @app.route("/")
@@ -92,7 +68,6 @@ def schedules(name, page_id):
     WEEK_LIST = convtime.date_on_week(TODAY, page_id)
     logger.debug(f"Список дат дней недели{WEEK_LIST}")
     query_list = []
-<<<<<<< HEAD
     row_lesson = []
 
     for week in WEEK_LIST:
@@ -110,25 +85,6 @@ def schedules(name, page_id):
     for week in WEEK_LIST:
         str_date.append(week.str_date)
 
-=======
-    row_list = []
-    for item in WEEK_LIST:
-        dbquery = db.get_timetable_by_classes(name=name,
-                                              date=str(item))
-        logger.debug(f"DBQUERY: {list(dbquery)}")
-        for element in dbquery:
-            row = element.lesson_number
-            row_list.append(row)
-        query_list.append(dbquery)
-    query_list = tuple(query_list)
-    row_list = set(row_list)
-    logger.debug(f"ROW_LIST: {row_list}")
-    col_name = ("Урок", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС")
-    week = ({"start": str(WEEK_LIST[0]),
-             "end": str(WEEK_LIST[6])},
-            {"start": str(WEEK_LIST[0]),
-             "end": str(WEEK_LIST[6])})
->>>>>>> main
     return render_template("schedules.html",
                            classname=name,
                            timetables=query_list,
