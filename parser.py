@@ -135,10 +135,10 @@ def get_lessons(html) -> tuple[namedtuple] | str:
                             lesson_room: str = fourth_p.text
                         elif div_class == ["dLE"]:
                             # logger.debug(f"DIV GET3: {div_class}")
-                            lesson_name = None
-                            lesson_room = None
-                            lesson_teacher = None
-                            lesson_time = None
+                            lesson_name = ""
+                            lesson_room = ""
+                            lesson_teacher = ""
+                            lesson_time = ""
                         result = Schedules(classes_name=schedules_classes.text,
                                            dnevnik_id=dnevnik_id,
                                            date=convert_to_isodate(schedules_date),
