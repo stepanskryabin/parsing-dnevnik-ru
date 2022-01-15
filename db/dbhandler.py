@@ -1,178 +1,188 @@
-import copy
-import sqlite3
-from sqlite3 import DatabaseError
-from collections import namedtuple
+import configparser
+import inspect
+import sys
+
+import sqlobject as orm
+from sqlobject.main import SQLObjectIntegrityError, SQLObjectNotFound
+from sqlobject.main import SelectResults
+from sqlobject.sqlbuilder import AND
+
+from models import models
+
+
+# ************** Read "config.ini" ********************
+config = configparser.ConfigParser()
+config.read('config.ini')
+database = config["DATABASE"]
+# ************** END **********************************
+
+
+class DatabaseReadError(SQLObjectNotFound):
+    pass
+
+
+class DatabaseAccessError(Exception):
+    pass
+
+
+class DatabaseWriteError(SQLObjectNotFound):
+    pass
 
 
 class DBHandler:
     def __init__(self,
-                 uri: str = ":memory:") -> None:
-        self.connection = sqlite3.connect(uri)
+                 uri: str = database.get("uri")) -> None:
         self._uri = uri
-        self.cur = self.connection.cursor()
-        self._paramstyle = sqlite3.paramstyle = "named"
-        sqlite3.threadsafety = 3
+        self._connection = orm.connectionForURI(self._uri)
+        orm.sqlhub.processConnection = self._connection
 
-    def __str__(self) -> str:
-        return f"Connected to database in {self._uri}"
+    def __str__(self):
+        return f"Connect to database: {self._uri}"
 
-    def __repr__(self) -> str:
-        return f"class DBHandler: paramstyle={self._paramstyle}"
+    def __repr__(self):
+        return f"{self.__class__.__name__} at uri: {self._uri}"
 
-    def __del__(self):
-        self.connection.close()
+    @staticmethod
+    def __search_db_in_models(path: str = 'models.models') -> tuple:
+        classes = [cls_name for cls_name, cls_obj
+                   in inspect.getmembers(sys.modules[path])
+                   if inspect.isclass(cls_obj)]
+        return tuple(classes)
 
-    def create_classes(self) -> None:
-        statement = '''CREATE TABLE IF NOT EXISTS Classes (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT UNIQUE NOT NULL,
-                    dnevnik_id INTEGER UNIQUE NOT NULL);'''
-        cursor = self.connection.cursor()
-        cursor.execute(statement)
-        self.connection.commit()
-        cursor.close()
+    def create(self) -> None:
+        # looking for all Classes listed in models.py
+        for item in self.__search_db_in_models():
+            # Create tables in database for each class
+            # that is located in models module
+            class_ = getattr(models, item)
+            class_.createTable(ifNotExists=True,
+                               connection=self._connection)
+        return "Ok"
 
-    def create_timetable(self) -> None:
-        statement = '''CREATE TABLE IF NOT EXISTS Timetable (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    date TEXT NOT NULL,
-                    lesson_number INTEGER NOT NULL,
-                    lesson_name TEXT NULL,
-                    lesson_room TEXT NULL,
-                    lesson_teacher TEXT NULL,
-                    lesson_time TEXT NULL,
-                    classes_id INTEGER,
-                    FOREIGN KEY (classes_id) REFERENCES Classes (id));'''
-        cursor = self.connection.cursor()
-        cursor.execute(statement)
-        self.connection.commit()
-        cursor.close()
+    def delete(self) -> None:
+        # looking for all Classes listed in models.py
+        for item in self.__search_db_in_models():
+            class_ = getattr(models, item)
+            class_.dropTable(ifExists=True, 
+                             dropJoinTables=True,
+                             cascade=True,
+                             connection=self._connection)
+        return "Ok"
 
-    def delete_all(self) -> None:
-        cursor = self.connection.cursor()
-        cursor.execute('DROP TABLE IF EXISTS Classes;')
-        cursor.execute('DROP TABLE IF EXISTS Timetable;')
-        self.connection.commit()
-        cursor.close()
-
-    def get_classes(self,
-                    name: str,
-                    dnevnik_id: int) -> tuple:
-        cursor = self.connection.cursor()
-        statement = '''SELECT *
-                    FROM Classes
-                    WHERE name = :name
-                    AND dnevnik_id = :dnevnik_id;'''
-        dbquery = cursor.execute(statement, {"dnevnik_id": dnevnik_id,
-                                             "name": name})
-        return tuple(copy.deepcopy(dbquery.fetchall()))
-
-    def add_classes(self,
-                    name: str,
-                    dnevnik_id: int) -> str:
-        cursor = self.connection.cursor()
-        statement = '''INSERT INTO Classes (
-                    name,
-                    dnevnik_id)
-                    VALUES (:name, :dnevnik_id);'''
-        try:
-            cursor.execute(statement, {"dnevnik_id": dnevnik_id,
-                                       "name": name})
-        except DatabaseError as err:
-            return f'Error {str(err)}'
+    def __read_classes(self,
+                       get_one: bool,
+                       **kwargs) -> SelectResults:
+        if get_one:
+            try:
+                dbquery = models.Classes.selectBy(self._connection,
+                                                  **kwargs).getOne()
+            except SQLObjectNotFound:
+                raise DatabaseReadError("Class is not in the database")
+            except Exception as err:
+                raise DatabaseAccessError from err
+            else:
+                return dbquery
         else:
-            self.connection.commit()
-            cursor.close()
-            return 'Ok'
+            try:
+                dbquery = models.Classes.selectBy(self._connection,
+                                                  **kwargs)
+            except SQLObjectNotFound:
+                raise DatabaseReadError("No classes data in the database")
+            except Exception as err:
+                raise DatabaseAccessError from err
+            else:
+                return dbquery
 
-    def get_timetable(self,
-                      name: str,
-                      dnevnik_id: int,
-                      date: str,
-                      lesson_number: int) -> tuple:
-        cursor = self.connection.cursor()
-        statement = '''SELECT *
-                    FROM Timetable
-                    WHERE date = :date
-                    AND lesson_number = :lesson_number
-                    AND classes_id IN (SELECT id FROM Classes
-                                      WHERE name = :name
-                                      AND dnevnik_id = :dnevnik_id);'''
-        dbquery = cursor.execute(statement, {"name": name,
-                                             "dnevnik_id": dnevnik_id,
-                                             "date": date,
-                                             "lesson_number": lesson_number})
-        result = tuple(copy.deepcopy(dbquery.fetchall()))
-        cursor.close()
-        return result
-
-    def add_timetable(self,
-                      name: str,
-                      dnevnik_id: int,
-                      date: str,
-                      lesson_number: int,
-                      lesson_name: str,
-                      lesson_room: str,
-                      lesson_teacher: str,
-                      lesson_time: str) -> str:
-        cursor = self.connection.cursor()
-        statement = '''INSERT INTO Timetable (
-                    date,
-                    lesson_number,
-                    lesson_name,
-                    lesson_room,
-                    lesson_teacher,
-                    lesson_time,
-                    classes_id)
-                    VALUES (:date, :lesson_number, :lesson_name,
-                    :lesson_room, :lesson_teacher, :lesson_time,
-                    (SELECT id FROM Classes
-                    WHERE name = :name
-                    AND dnevnik_id = :dnevnik_id));'''
+    def __write_classes(self,
+                        **kwargs) -> models.Classes:
         try:
-            cursor.execute(statement, {"date": date,
-                                       "lesson_number": lesson_number,
-                                       "lesson_name": lesson_name,
-                                       "lesson_room": lesson_room,
-                                       "lesson_teacher": lesson_teacher,
-                                       "lesson_time": lesson_time,
-                                       "name": name,
-                                       "dnevnik_id": dnevnik_id})
-        except DatabaseError as err:
-            return f'Error {str(err)}'
+            dbquery = models.Classes(**kwargs)
+        except SQLObjectIntegrityError:
+            raise DatabaseWriteError("Writing is restricted")
+        except Exception as err:
+            raise DatabaseAccessError from err
         else:
-            self.connection.commit()
-            cursor.close()
-            return 'Ok'
+            return dbquery
 
-    def get_timetable_by_classes_and_date(self,
-                                          name: str,
-                                          date: str) -> tuple:
-        Timetable = namedtuple('Timetable', ["id",
-                                             "date",
-                                             "lesson_number",
-                                             "lesson_name",
-                                             "lesson_room",
-                                             "lesson_teacher",
-                                             "lesson_time"])
-        result = []
-        cursor = self.connection.cursor()
-        statement = '''SELECT *
-                    FROM Timetable
-                    WHERE date = :date
-                    AND classes_id IN (SELECT id FROM Classes
-                    WHERE name = :name);'''
-        dbquery = cursor.execute(statement, {"date": date,
-                                             "name": name})
-        all_row = tuple(copy.deepcopy(dbquery.fetchall()))
-        for row in all_row:
-            result.append(Timetable(id=row[0],
-                                    date=row[1],
-                                    lesson_number=row[2],
-                                    lesson_name=row[3],
-                                    lesson_room=row[4],
-                                    lesson_teacher=row[5],
-                                    lesson_time=row[6]))
-        self.connection.commit()
-        cursor.close()
-        return tuple(result)
+    def __read_timetables(self,
+                          get_one: bool,
+                          **kwargs) -> SelectResults:
+        if get_one:
+            try:
+                dbquery = models.Timetable.selectBy(self._connection,
+                                                    **kwargs).getOne()
+            except SQLObjectNotFound:
+                raise DatabaseReadError("Timetable is not in the database")
+            except Exception as err:
+                raise DatabaseAccessError from err
+            else:
+                return dbquery
+        else:
+            try:
+                dbquery = models.Timetable.selectBy(self._connection,
+                                                    **kwargs)
+            except SQLObjectNotFound:
+                raise DatabaseReadError("No timetables data in the database")
+            except Exception as err:
+                raise DatabaseAccessError from err
+            else:
+                return dbquery
+
+    def __write_timetables(self,
+                           **kwargs) -> models.Timetable:
+        try:
+            dbquery = models.Timetable(**kwargs)
+        except SQLObjectIntegrityError:
+            raise DatabaseWriteError("Writing is restricted")
+        except Exception as err:
+            raise DatabaseAccessError from err
+        else:
+            return dbquery
+
+    def get_classes_by_name_and_id(self,
+                                   name: str,
+                                   dnevnik_id: int) -> SelectResults:
+        return self.__read_classes(get_one=True,
+                                   name=name,
+                                   dnevnik_id=dnevnik_id)
+
+    def add_new_class(self,
+                      name: str,
+                      dnevnik_id: int) -> None:
+        return self.__write_classes(name=name,
+                                    dnevnik_id=dnevnik_id)
+
+    def add_new_timetable(self,
+                          name: str,
+                          dnevnik_id: int,
+                          date: str,
+                          lesson_number: int,
+                          lesson_name: str,
+                          lesson_room: str,
+                          lesson_teacher: str,
+                          lesson_time: str) -> None:
+        try:
+            dbquery = self.get_classes_by_name_and_id(name=name,
+                                                      dnevnik_id=dnevnik_id)
+        except DatabaseReadError:
+            new_class = self.add_new_class(name=name,
+                                           dnevnik_id=dnevnik_id)
+        else:
+            new_class = dbquery.id
+        finally:
+            return self.__write_timetables(date=date,
+                                           lesson_number=lesson_number,
+                                           lesson_name=lesson_name,
+                                           lesson_room=lesson_room,
+                                           lesson_teacher=lesson_teacher,
+                                           lesson_time=lesson_time,
+                                           classes=new_class)
+
+    def get_timetable_by_classes(self,
+                                 name: str,
+                                 date: str) -> SelectResults:
+        classes = self.__read_classes(get_one=True,
+                                      name=name)
+        return models.Timetable.select(AND(
+                                       models.Timetable.q.date == date,
+                                       models.Timetable.q.classes == classes))

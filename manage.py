@@ -1,4 +1,5 @@
 from time import process_time
+<<<<<<< HEAD
 
 import click
 
@@ -9,7 +10,25 @@ from controller.config import SCHEDULES
 
 db = DBHandler(DB.get('uri'))
 sc = schedules.Schedule(SCHEDULES.get('hour'))
+=======
+import configparser
 
+import click
+
+from models import dbhandler
+from controller import schedules
+
+# ************** Read "config.ini" ********************
+config = configparser.ConfigParser()
+config.read('config.ini')
+logging = config['LOGGING']
+DB = config["DATABASE"]
+SCHEDULES = config["SCHEDULES"]
+# ************** END **********************************
+>>>>>>> main
+
+db = dbhandler.DBHandler(DB.get('uri'))
+sc = schedules.Schedule(SCHEDULES.get('hour'))
 
 @click.command()
 @click.option("--database",
@@ -21,6 +40,7 @@ sc = schedules.Schedule(SCHEDULES.get('hour'))
               type=click.Choice(["run", "delete"]),
               help='Run or delete cron job '
               'where started parser.py with period'
+<<<<<<< HEAD
               'Period settings in config.ini')
 def main(database,
          schedules):
@@ -28,6 +48,14 @@ def main(database,
         start_time = process_time()
         db.create()
         click.echo(f'Table is created at: '
+=======
+              'Perion settings in config.ini')
+def main(database, schedules):
+    if database == "create":
+        start_time = process_time()
+        db.create()
+        click.echo(f'Table is createt at: '
+>>>>>>> main
                    f'{process_time() - start_time} sec.')
     elif database == "delete":
         start_time = process_time()

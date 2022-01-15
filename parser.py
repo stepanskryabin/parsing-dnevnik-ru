@@ -5,6 +5,7 @@ from collections import namedtuple
 from bs4 import BeautifulSoup
 from selenium import webdriver
 
+<<<<<<< HEAD
 from db import dbhandler
 from controller import convtime
 from controller.config import LOGGING
@@ -17,6 +18,12 @@ from controller.convtime import convert_to_isodate
 from controller.convtime import get_trimester
 from controller.convtime import filtred_by_week
 
+=======
+
+from models import dbhandler
+from controller import convtime
+from server import TODAY
+>>>>>>> main
 
 # ************** Logging beginning *******************
 from loguru import logger
@@ -29,6 +36,7 @@ logging.disable()
 
 add_logging(LOGGING.getint('level'))
 
+<<<<<<< HEAD
 TODAY = date.today()
 # TODAY = date.fromisoformat("2021-11-12")
 
@@ -36,6 +44,9 @@ db = dbhandler.DBHandler(DB.get('uri'))
 db.delete_all()
 db.create_classes()
 db.create_timetable()
+=======
+db = dbhandler.DBHandler(DB.get('uri'))
+>>>>>>> main
 
 
 def get_lessons(html) -> tuple[namedtuple] | str:
@@ -103,6 +114,7 @@ def get_lessons(html) -> tuple[namedtuple] | str:
                     # logger.debug(f"LESSON INFO2: {lesson_info}")
                     continue
                 else:
+<<<<<<< HEAD
                     all_div = lesson_info.find_all('div')
                     # logger.debug(f"ALL DIV: {all_div}")
                     for div in all_div:
@@ -139,6 +151,35 @@ def get_lessons(html) -> tuple[namedtuple] | str:
                                            lesson_time=lesson_time)
                         lessons.append(result)
 
+=======
+                    lesson_name = lesson_info.find('a', class_='aL')
+                if lesson_name is None:
+                    lesson_name = 'Урок отсутствует'
+                else:
+                    lesson_name = lesson_name.get('title')
+                if lesson_info.div is None:
+                    continue
+                elif lesson_info.div.p is None:
+                    continue
+                else:
+                    first_p = lesson_info.div.p
+                    _ = first_p.get('title')
+                    second_p = first_p.find_next('p')
+                    lesson_teacher: str = second_p.text
+                    third_p = second_p.find_next('p')
+                    lesson_time: str = third_p.text
+                    fourth_p = third_p.find_next('p')
+                    lesson_room: str = fourth_p.text
+                    result = Schedules(classes_name=schedules_classes.text,
+                                       dnevnik_id=dnevnik_id,
+                                       date=convert_to_isodate(schedules_date),
+                                       lesson_number=lesson_number,
+                                       lesson_name=lesson_name,
+                                       lesson_room=lesson_room,
+                                       lesson_teacher=lesson_teacher,
+                                       lesson_time=lesson_time)
+                    lessons.append(result)
+>>>>>>> main
     logger.debug("Кортеж с расписанием сформирован")
     return tuple(lessons)
 
@@ -156,6 +197,7 @@ def write_db(lesson: tuple[namedtuple]) -> str:
 
     """
     logger.debug(f'Кортеж для записи: {lesson}')
+<<<<<<< HEAD
     dbquery1 = db.add_classes(name=lesson.classes_name,
                               dnevnik_id=lesson.dnevnik_id)
 
@@ -171,6 +213,21 @@ def write_db(lesson: tuple[namedtuple]) -> str:
         return 'Ok'
     else:
         return f'Error #1{dbquery1}, #2{dbquery2}'
+=======
+    try:
+        db.add_new_timetable(name=lesson.classes_name,
+                             dnevnik_id=lesson.dnevnik_id,
+                             date=lesson.date,
+                             lesson_number=lesson.lesson_number,
+                             lesson_name=lesson.lesson_name,
+                             lesson_room=lesson.lesson_room,
+                             lesson_teacher=lesson.lesson_teacher,
+                             lesson_time=lesson.lesson_time)
+        return "Ok"
+    except Exception as ERROR:
+        logger.exception(f"Запись в БД неудачна: {ERROR}")
+        return "Error"
+>>>>>>> main
 
 
 def get_classes(html) -> tuple[namedtuple]:
@@ -208,7 +265,11 @@ def get_classes(html) -> tuple[namedtuple]:
                     # содержащий три объекта, где последний объект
                     # ID учебного класса
                     class_id = url.rsplit(sep="=")[2]
+<<<<<<< HEAD
                     class_name = second_item.a.text
+=======
+                    class_name = item.a.text
+>>>>>>> main
                     result = Classes(class_name=class_name,
                                      url=url,
                                      class_id=class_id)
@@ -222,7 +283,11 @@ def get_schedules(tuple_of_classes: tuple[namedtuple],
                   start_month: int,
                   start_day: int,
                   deep_day: int) -> set | str:
+<<<<<<< HEAD
     """Функция генерирует кортеж ссылок на расписание
+=======
+    """Функция генерирует кортеж с ссылками на расписание
+>>>>>>> main
     уроков от заданной даты и на заданную глубину
 
     Args:
@@ -247,6 +312,7 @@ def get_schedules(tuple_of_classes: tuple[namedtuple],
         return 'Error'
     else:
         for item in tuple_of_classes:
+<<<<<<< HEAD
             # в кортеже list_of_classes находится вложенный именованный
             # кортеж из трёх элементов: название учебного класса,
             # cсылка на расписание, ID в системе dnevnikru
@@ -256,6 +322,17 @@ def get_schedules(tuple_of_classes: tuple[namedtuple],
                                      f'&year={d.year}',
                                      f'&month={d.month}',
                                      f'&day={d.day}'])
+=======
+        # в кортеже list_of_classes находится вложенный именованый
+        # кортеж из трёх элементов: название учебного класса,
+        # сылка на расписание, ID в системе dnevnikru
+            for d in date_filtred:
+                schedules = ''.join([f'{item.url}',
+                                 f'&period={get_trimester(d)}',
+                                 f'&year={d.year}',
+                                 f'&month={d.month}',
+                                 f'&day={d.day}'])
+>>>>>>> main
                 result.append(schedules)
         logger.debug(f"Список ссылок на расписание: {tuple_of_classes}")
         return set(result)
@@ -287,7 +364,12 @@ def main(url: str) -> bool:
     logger.debug("Переход в ЛК")
     # Переходим на страницу школьных расписаний с актуальным годом
     browser.get(''.join([f'{DNEVNIK_RU.get("schedules_url")}',
+<<<<<<< HEAD
                          f'?school={PARAMETERS.get("school")}']))
+=======
+                         f'?school={PARAMETERS.get("school")}',
+                         f'&tab=groups&year={TODAY.year}']))
+>>>>>>> main
     logger.debug("Переход на страницу с расписаниями")
     # Парсим ссылки на все классы
     tuple_of_classes = get_classes(browser.page_source)
@@ -301,14 +383,22 @@ def main(url: str) -> bool:
     if schedules == 'Error':
         logger.error("Кортеж с ссылками на расписание пустой")
         return True
+<<<<<<< HEAD
     logger.debug(f"Кортеж из ссылок на расписание сформирован {schedules}")
+=======
+    logger.debug("Кортеж из ссылок на расписание сформирован")
+>>>>>>> main
     # Обходим кортеж ссылок и получаем html для обработки
     for schedule in schedules:
         browser.get(schedule)
         lessons = get_lessons(browser.page_source)
         if lessons == "Error":
             logger.error("Отсутствует расписание занятий")
+<<<<<<< HEAD
             continue
+=======
+            break
+>>>>>>> main
         for lesson in lessons:
             status = write_db(lesson)
             logger.debug(f"Попытка записи данных в БД - результат: {status}")
