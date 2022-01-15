@@ -1,5 +1,11 @@
 from collections import namedtuple
-from datetime import timedelta, date
+from datetime import timedelta
+from datetime import date
+
+from loguru import logger
+
+from controller.config import DNEVNIK_RU
+from controller.config import TRIMESTER
 
 
 def filtred_by_week(year: int,
@@ -15,7 +21,7 @@ def filtred_by_week(year: int,
         deep_day (int): глубина (дни) на которую загружается расписание
 
     Returns:
-        tuple: список дат, которые принадлежат только одной неделе.
+        set: список дат, которые принадлежат только одной неделе.
         На одну неделю - одна дата.
     """
     start_date = date(year, month, day)
@@ -88,3 +94,38 @@ def date_on_week(today=None,
                                date=date_,
                                str_date=str(date_)))
         return tuple(result)
+
+
+def convert_to_isodate(from_string: str) -> str:
+    """Функция конвертирует найденный ID в дату
+    в ISO-формате
+
+    Args:
+        from_string (str): строка содержащая дату, например 'd20201101'
+
+    Returns:
+        [str]: возвращает дату в формате ISO, например '2020-11-01'
+    """
+    var = from_string.lstrip('d')
+    return date(int(var[0:4]),
+                int(var[4:6]),
+                int(var[6:8])).isoformat()
+
+
+def get_trimester(request_date: date) -> int:
+    number_of_trimester = (DNEVNIK_RU.getint('1trimester'),
+                           DNEVNIK_RU.getint('2trimester'),
+                           DNEVNIK_RU.getint('3trimester'))
+    first_trimester = date.fromisoformat(TRIMESTER.get('first'))
+    second_trimester = date.fromisoformat(TRIMESTER.get('second'))
+    third_trimester = date.fromisoformat(TRIMESTER.get('third'))
+    if request_date <= first_trimester:
+        return number_of_trimester[0]
+    elif first_trimester < request_date <= second_trimester:
+        return number_of_trimester[1]
+    elif second_trimester < request_date <= third_trimester:
+        return number_of_trimester[2]
+    else:
+        logger.error(' '.join("Ошибка в определении триместра.",
+                              "Использован номер первого триместра"))
+        return number_of_trimester[1]

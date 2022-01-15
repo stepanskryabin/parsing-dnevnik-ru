@@ -1,78 +1,104 @@
-{% extends "base.html" %}
-
-{% block menu %}
-<ul class="nav nav-pills justify-content-end">
-  <li class="nav-item">
-    <a class="nav-link active" aria-current="page" href="/home">Назад</a>
-  </li>
-</ul>
-{% endblock %}
-
-{% block title %}
-<h4>{{ classname }} класс, с {{ start_date }} по {{ stop_date }}</h4>
-{% endblock %}
-
-{% block content %}
-<div class="container">
-<div class="table-responsive">
-<table class="table table-sm table-striped table-bordered">
-  <thead class="table-dark">
-    <tr>
-      {% for column in ("Урок", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС") %}
-        <th class="fs-6 lh-sm" scope="col">{{ column }}</th>
-      {% endfor %}
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      {% for row in (1,2,3,4,5,6,7,8,9,10,11,12) %}
-        <th class="lh-sm" scope="row">{{ row }}</th>
-        {% for week_column in week_list %}
-        <td>
-            {% for item in timetables %}
-              {% if item.date == week_column %}
-                {% if item.lesson_number == row %}
-                  <p class="fs-6 lh-1">
-                  <strong>{% if item.lesson_room == none %}{% else %}{{ item.lesson_room }}{% endif %}</strong>
-                  <br>
-                  {% if item.lesson_room == none %}{% else %}{{ item.lesson_name }}{% endif %}
-                  <br>
-                  {% if item.lesson_room == none %}{% else %}{{ item.lesson_teacher }}{% endif %}
-                  <br>
-                  {% if item.lesson_room == none %}{% else %}{{ item.lesson_time }}{% endif %}
-                  </p>
-                {% endif %}
-              {% endif %}
-            {% endfor %}
-        </td>
-        {% endfor %}
-        </tr>
-        <tr>
-      {% endfor %}
-  </tbody>
-</table>
-</div>
-</div>
-{% endblock %}
-
-{% block footer %}
-<nav aria-label="Pagination">
-  <ul class="pagination">
-    {%if page_id == 1 %}
-      <li class="page-item active" aria-current="page">
-        <span class="page-link">Текущая неделя</span>
-      </li>
-      <li class="page-item">
-        <a class="page-link" href="/schedules/{{classname}}-2">Следующая неделя</a>
-      </li>
-    {% elif page_id == 2 %}
-      <li class="page-item">
-      <a class="page-link" href="/schedules/{{classname}}-1">Текущая неделя</a>
-      </li>
-      <li class="page-item active" aria-current="page">
-        <span class="page-link">Следующая неделя</span>
-      </li>
-    {% endif %}
-  </ul>
-</nav>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <link rel="apple-touch-icon" sizes="180x180" href={{ url_for("static", filename="icon/calendar.png") }}>
+  <link rel="icon" type="image/png" sizes="32x32" href={{ url_for("static", filename="icon/favicon-32x32.png") }}>
+  <link rel="icon" type="image/png" sizes="16x16" href={{ url_for("static", filename="icon/favicon-16x16.png") }}>
+  <link rel="manifest" href={{ url_for("static", filename="icon/site.webmanifest") }}>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href={{ url_for("static", filename="css/bootstrap.min.css") }}>
+  <script src={{ url_for("static", filename="js/bootstrap.min.js") }}></script>
+  <title>Расписание</title>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row" id="menu">
+      <div class="col-1 align-self-center">
+        <ul class="nav nav-pills">
+          <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="/home">Назад</a>
+          </li>
+        </ul>
+      </div>
+      <div class="col-7 align-self-center">
+        <p class="display-6"><b>{{ classname }}</b> класс, с {{ start_date }} {{ start_month }} по {{ stop_date }} {{ stop_month }}</p>
+      </div>
+      <div class="col-4 align-self-center">
+        <br>
+        <nav aria-label="Pagination">
+        <ul class="pagination">
+          {%if page_id == 1 %}
+            <li class="page-item active" aria-current="page">
+              <span class="page-link">Текущая неделя</span>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="/schedules/{{classname}}-2">Следующая неделя</a>
+            </li>
+          {% elif page_id == 2 %}
+            <li class="page-item">
+              <a class="page-link" href="/schedules/{{classname}}-1">Текущая неделя</a>
+            </li>
+            <li class="page-item active" aria-current="page">
+              <span class="page-link">Следующая неделя</span>
+            </li>
+          {% endif %}
+        </ul>
+        </nav>
+      </div>
+    </div>
+    <div class="row" id="content">
+      <div class="col-xl-1">
+      </div>
+      <div class="col-xl-12">
+            <div class="table-responsive">
+              <table class="table table-sm table-striped table-bordered">
+                <thead class="table-dark">
+                  <tr>
+                  {% for column in ("Урок", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС") %}
+                    <th class="fs-6 lh-sm" scope="col">{{ column }}</th>
+                  {% endfor %}
+                  </tr>
+                </thead>
+                <tbody>
+                <tr>
+                {% for row in row_lesson %}
+                  <th class="lh-sm" scope="row">{{ row }}</th>
+                  {% for week_column in week_list %}
+                  <td>
+                    {% for item in timetables %}
+                      {% if item.date == week_column %}
+                        {% if item.lesson_number == row %}
+                          <p class="fs-6 lh-1">
+                          <strong>{{ item.lesson_room }}</strong>
+                          <br>
+                          {{ item.lesson_name }}
+                          <br>
+                          {{ item.lesson_teacher }}
+                          <br>
+                          {{ item.lesson_time }}
+                          </p>
+                        {% endif %}
+                      {% endif %}
+                    {% endfor %}
+                  </td>
+                {% endfor %}
+                </tr>
+              {% endfor %}
+              </tbody>
+              </table>
+            </div>
+      </div>
+      <div class="col-xl-1">
+      </div>
+    </div>
+    <div class="row" id="footer">
+      <div class="col">
+      </div>
+      <div class="col">
+      </div>
+      <div class="col">
+      </div>
+    </div>
+  </div>
+</body>
+</html>

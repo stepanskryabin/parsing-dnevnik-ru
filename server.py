@@ -40,7 +40,7 @@ def home():
                "9а", "9б", "9в",
                "10",
                "11")
-    years = f"{TODAY.year} / {TODAY.year + 1}"
+    years = f"{TODAY.year-1} / {TODAY.year}"
     return render_template("index.html",
                            classes=classes,
                            years=years)
@@ -48,18 +48,36 @@ def home():
 
 @app.route('/schedules/<name>-<int:page_id>')
 def schedules(name, page_id):
+    month = {
+        "1": "января",
+        "2": "февраля",
+        "3": "марта",
+        "4": "апреля",
+        "5": "мая",
+        "6": "июня",
+        "7": "июля",
+        "8": "августа",
+        "9": "сентября",
+        "10": "октября",
+        "11": "ноября",
+        "12": "декабря"
+        }
     db = dbhandler.DBHandler(DB.get("uri"))
     WEEK_LIST = convtime.date_on_week(TODAY, page_id)
     logger.debug(f"Список дат дней недели{WEEK_LIST}")
     query_list = []
+    row_lesson = []
 
     for week in WEEK_LIST:
         dbquery = db.get_timetable_by_classes_and_date(name=name,
                                                        date=week.str_date)
         for item in dbquery:
             query_list.append(item)
+            if item.lesson_name != "" and item.lesson_room != "":
+                row_lesson.append(item.lesson_number)
 
     logger.debug(f"Timetable: {list(query_list)}")
+    logger.debug(f"ROW: {set(row_lesson)}")
 
     str_date = []
     for week in WEEK_LIST:
@@ -68,9 +86,12 @@ def schedules(name, page_id):
     return render_template("schedules.html",
                            classname=name,
                            timetables=query_list,
+                           row_lesson=set(row_lesson),
                            page_id=page_id,
-                           start_date=WEEK_LIST[0].str_date,
-                           stop_date=WEEK_LIST[6].str_date,
+                           start_month=month[f"{WEEK_LIST[0].date.month}"],
+                           start_date=WEEK_LIST[0].date.day,
+                           stop_month=month[f"{WEEK_LIST[6].date.month}"],
+                           stop_date=WEEK_LIST[6].date.day,
                            week_list=str_date)
 
 
