@@ -4,12 +4,11 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-selenium = "==4.0.0"
+selenium = "==3.141.0"
 beautifulsoup4 = "==4.10.0"
 lxml = "==4.6.3"
 flask = "==2.0.2"
-loguru = "==0.5.3"
-python-crontab = "==2.6.0"
+loguru = "==0.6.0"
 
 [dev-packages]
 flake8 = "*"

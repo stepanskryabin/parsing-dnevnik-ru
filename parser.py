@@ -52,7 +52,7 @@ def get_lessons(html) -> tuple[namedtuple] | str:
     soup = BeautifulSoup(html, 'lxml')
 
     schedules_classes = soup.find('a', attrs={"class": "blue"})
-    logger.debug("Найдено имя учебного класса")
+    logger.debug(f"Найдено имя учебного класса: {schedules_classes.text}")
     classes_group_id = schedules_classes.get('href')
     logger.debug(f"Получена ссылка с ID класса: {classes_group_id}")
     dnevnik_id = int(classes_group_id.rsplit(sep='=')[1])
@@ -74,11 +74,11 @@ def get_lessons(html) -> tuple[namedtuple] | str:
     for item in all_tr:
         lesson_number = item.find('td', class_='wDS')
         if lesson_number is None:
-            logger.debug("Номер урока отсутствует")
             continue
         else:
             lesson_numbers.append(int(lesson_number.strong.text))
     lesson_numbers = tuple(lesson_numbers)
+    logger.debug(f"Найдены номера уроков {lesson_numbers}")
 
     # Находим название урока, учителя, время и кабинет
     # и кладём это в единый кортеж с уже включенными: датой урока и
@@ -97,32 +97,29 @@ def get_lessons(html) -> tuple[namedtuple] | str:
             for lesson_number in lesson_numbers:
                 lesson_info = item.find('td',
                                         id=f'{schedules_date}_{lesson_number}')
-                # logger.debug(f"LESSON INFO1: {lesson_info}")
                 if lesson_info is None:
-                    # logger.debug(f"LESSON INFO2: {lesson_info}")
                     continue
                 else:
+                    logger.debug(f"На дату: {schedules_date} и урок №{lesson_number} информация: {lesson_info}")
                     all_div = lesson_info.find_all('div')
-                    # logger.debug(f"ALL DIV: {all_div}")
                     for div in all_div:
                         div_class = div.get('class')
+                        logger.debug(f"Найден DIV CLASS: {div_class}")
                         if div_class == ['popup', 'shadow']:
-                            # logger.debug(f"DIV GET1: {div_class}")
                             continue
                         elif div_class == ["dL"]:
-                            # logger.debug(f"DIV GET2: {div_class}")
                             lesson_name = div.find('a', class_='aL').get('title')
-                            # logger.debug(f"LESSON NAME1: {lesson_name}")
+                            logger.debug(f"LESSON NAME: {lesson_name}")
                             first_p = div.p
-                            _ = first_p.get('title')
+                            lesson_teacher: str = first_p.text
+                            logger.debug(f"LESSON TEACHER: {lesson_teacher}")
                             second_p = first_p.find_next('p')
-                            lesson_teacher: str = second_p.text
+                            lesson_time: str = second_p.text
+                            logger.debug(f"LESSON TIME: {lesson_time}")
                             third_p = second_p.find_next('p')
-                            lesson_time: str = third_p.text
-                            fourth_p = third_p.find_next('p')
-                            lesson_room: str = fourth_p.text
-                        elif div_class == ["dLE"]:
-                            # logger.debug(f"DIV GET3: {div_class}")
+                            lesson_room: str = third_p.text
+                            logger.debug(f"LESSON ROOM: {lesson_room}")
+                        else:
                             lesson_name = ""
                             lesson_room = ""
                             lesson_teacher = ""
