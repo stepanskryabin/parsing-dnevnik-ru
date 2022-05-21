@@ -6,7 +6,9 @@ from controller.config import LOGGING
 
 
 def add_logging(debug_status: int = 20) -> None:
-    """Enables logging depending on start parameter uvicorn
+    """
+    Enables logging depending on start parameter uvicorn
+
     Instead of print we use:                       #
                logger.debug('debug message')       #
                logger.info('info message')         #
@@ -17,15 +19,16 @@ def add_logging(debug_status: int = 20) -> None:
                1 - error level
                2 - debug level
     The information is also duplicated in the console
+
     Args:
-        debug_status (int, requires):
-        CRITICAL-50;
-        ERROR-40;
-        WARNING-30;
-        SUCCES-25;
-        INFO-20;
-        DEBUG-10;
-        TRACE-5.
+        debug_status: 50 = CRITICAL
+                      40 = ERROR
+                      30 = WARNING
+                      25 = SUCCESS
+                      20 = INFO
+                      10 = DEBUG
+                      5  = TRACE
+
     Returns:
         None
     """
