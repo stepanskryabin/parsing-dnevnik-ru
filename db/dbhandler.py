@@ -1,10 +1,30 @@
 import copy
 import sqlite3
 from sqlite3 import DatabaseError
-from collections import namedtuple
+from typing import NamedTuple
+
+
+class Timetable(NamedTuple):
+    id: int
+    date: str
+    lesson_number: int
+    lesson_name: str
+    lesson_room: str
+    lesson_teacher: str
+    lesson_time: str
 
 
 class DBHandler:
+    """
+    Работа с базой данных (sqlite).
+
+    Позволяет создавать БД, таблицы в бд, а так же добавлять и извлекать данные
+    из таблиц.
+
+    Args:
+        uri: адрес подключения БД
+    """
+
     def __init__(self,
                  uri: str = ":memory:") -> None:
         self.connection = sqlite3.connect(uri)
@@ -23,6 +43,13 @@ class DBHandler:
         self.connection.close()
 
     def create_classes(self) -> None:
+        """
+        Создание таблицы с информацией об учебных классах.
+
+        Returns:
+            None
+        """
+
         statement = '''CREATE TABLE IF NOT EXISTS Classes (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT UNIQUE NOT NULL,
@@ -33,6 +60,13 @@ class DBHandler:
         cursor.close()
 
     def create_timetable(self) -> None:
+        """
+        Создание таблицы с информацией о расписании.
+
+        Returns:
+            None
+        """
+
         statement = '''CREATE TABLE IF NOT EXISTS Timetable (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     date TEXT NOT NULL,
@@ -49,6 +83,14 @@ class DBHandler:
         cursor.close()
 
     def delete_all(self) -> None:
+        """
+        Удаление всех таблиц из БД.
+        Файл БД не удаляется.
+
+        Returns:
+            None
+        """
+        
         cursor = self.connection.cursor()
         cursor.execute('DROP TABLE IF EXISTS Classes;')
         cursor.execute('DROP TABLE IF EXISTS Timetable;')
@@ -58,6 +100,17 @@ class DBHandler:
     def get_classes(self,
                     name: str,
                     dnevnik_id: int) -> tuple:
+        """
+        Получение информации о классе.
+
+        Args:
+            name: имя класса
+            dnevnik_id: ID в системе dnevnik.ru
+
+        Returns:
+            id, имя класса, id класса в системе dnevnik.ru
+        """
+
         cursor = self.connection.cursor()
         statement = '''SELECT *
                     FROM Classes
@@ -70,6 +123,17 @@ class DBHandler:
     def add_classes(self,
                     name: str,
                     dnevnik_id: int) -> str:
+        """
+        Добавление информации о классе и его ID в системе dnevnik.ru.
+
+        Args:
+            name: имя класса
+            dnevnik_id: ID в системе dnevnik.ru
+
+        Returns:
+            Ok или в случае ошибки Error с описанием ошибки
+        """
+
         cursor = self.connection.cursor()
         statement = '''INSERT INTO Classes (
                     name,
@@ -90,6 +154,19 @@ class DBHandler:
                       dnevnik_id: int,
                       date: str,
                       lesson_number: int) -> tuple:
+        """
+        Получить информацию о расписании в указанный день и в указанном классе.
+
+        Args:
+            name: имя класса
+            dnevnik_id: ID в системе dnevnik.ru
+            date: дата урока, по расписанию
+            lesson_number: номер урока
+
+        Returns:
+            Расписание (дата, время, учитель, имя урока, номер кабинета)
+        """
+
         cursor = self.connection.cursor()
         statement = '''SELECT *
                     FROM Timetable
@@ -115,6 +192,23 @@ class DBHandler:
                       lesson_room: str,
                       lesson_teacher: str,
                       lesson_time: str) -> str:
+        """
+        Добавить запись в таблицу расписаний уроков.
+
+        Args:
+            name: имя класса
+            dnevnik_id: ID в системе dnevnik.ru
+            date: дата урока, по расписанию
+            lesson_number: номер урока
+            lesson_name: имя урока
+            lesson_room: номер кабинета, где проходит урок
+            lesson_teacher: имя учителя
+            lesson_time: время урока
+
+        Returns:
+            Ok или в случае ошибки Error с описанием ошибки
+        """
+
         cursor = self.connection.cursor()
         statement = '''INSERT INTO Timetable (
                     date,
@@ -147,14 +241,19 @@ class DBHandler:
 
     def get_timetable_by_classes_and_date(self,
                                           name: str,
-                                          date: str) -> tuple:
-        Timetable = namedtuple('Timetable', ["id",
-                                             "date",
-                                             "lesson_number",
-                                             "lesson_name",
-                                             "lesson_room",
-                                             "lesson_teacher",
-                                             "lesson_time"])
+                                          date: str) -> tuple[Timetable]:
+        """
+        Получить расписание отфильтровав по дате и учебному классу.
+
+        Args:
+            name: имя класса
+            date: дата урока, по расписанию
+
+        Returns:
+            Расписание с указанием id, даты, номера урока, имени урока, номера
+            кабинета, имени учителя, времени урока
+        """
+
         result = []
         cursor = self.connection.cursor()
         statement = '''SELECT *
